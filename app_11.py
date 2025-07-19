@@ -11,7 +11,7 @@ file_lock = Lock()
 CONFIG = {
     "MAX_INCIDENTS_PER_REPORT": 10,
     "REFRESH_INTERVAL": 5,
-    "VALID_PHONE_FORMATS": [r"^\d{3}-\d{3}-\d{4}$", r"^\d{10}$"],
+    "VALID_PHONE_FORMATS": [r"^\d{5}-\d{6}$", r"^\d{11}$"],
     "ALLOWED_SPECIAL_CHARS": " -.,#/",
     "LOG_DIR": "incident_logs",
     "RESOLVED_DIR": "resolved_incidents"
@@ -581,7 +581,7 @@ def ask_questions(questions):
             prompt = f"{question} (yes/no): "
             response = validate_input(prompt, validate_yes_no)
         elif "phone" in key.lower():
-            prompt = f"{question} (format: XXX-XXX-XXXX or XXXXXXXXXX): "
+            prompt = f"{question} (format: XXXXX-XXXXXX or XXXXXXXXXXX): "
             response = validate_input(prompt, validate_phone)
         else:
             prompt = f"{question}: "
