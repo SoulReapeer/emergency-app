@@ -113,6 +113,30 @@ incident_types = {
         "suicidal_person", "hostage_situation", "active_shooter",
         "bomb_threat", "kidnapping", "animal_attack",
         "emergency_assistance", "alarm_activation"
+    ],
+    "cyber_incident": [
+        "data_breach", "system_hack", "phishing_attack", "ransomware"
+    ],
+    "utility_emergency": [
+        "gas_line_rupture", "water_main_break", "power_grid_failure"
+    ],
+    "weather_alert": [
+        "heavy_snowfall", "blizzard", "heatwave", "storm_surge"
+    ],
+    "marine_incident": [
+        "boat_capsize", "drowning", "oil_spill", "water_rescue"
+    ],
+    "aviation_incident": [
+        "airplane_crash", "emergency_landing", "mid_air_distress"
+    ],
+    "public_health_incident": [
+        "disease_outbreak", "food_contamination", "mass_poisoning"
+    ],
+    "crowd_control": [
+        "riot", "stampede", "mass_protest", "overcrowded_event"
+    ],
+    "infrastructure_failure": [
+        "bridge_collapse", "tunnel_cave_in", "building_integrity_risk"
     ]
 }
 
@@ -121,7 +145,16 @@ general_questions = {
     "location": "What is the address of the emergency?",
     "phone_number": "What is the phone number you're calling from?",
     "name": "What is your name?",
-    "incident_description": "Tell us exactly what happened."
+    "incident_description": "Tell us exactly what happened.",
+    "time_of_incident": "When did the incident occur? (Provide date and time)",
+    "number_of_people_involved": "How many people are involved or affected?",
+    "is_anyone_injured": "Is anyone injured? If yes, what are the injuries?",
+    "is_it_still_happening": "Is the situation still ongoing?",
+    "any_danger_to_others": "Is there any immediate danger to others nearby?",
+    "any_weapons_involved": "Are there any weapons or hazardous materials involved?",
+    "your_current_safety": "Are you currently in a safe location?",
+    "first_responder_needed": "Do you think you need police, fire, or medical assistance first?",
+    "access_to_location": "Is there any difficulty accessing the location (e.g., locked gate, narrow alley)?"
 }
 
 # Incident-specific questions (same as original)
@@ -377,6 +410,157 @@ incident_questions = {
     "alarm_activation": {
         "alarm_type": "What type of alarm is activated? (fire/security/etc.)",
         "visible_issue": "Is there a visible emergency or damage? (yes/no)"
+    },
+
+    #cyber_incident_questions
+    "data_breach": {
+        "systems_affected": "What systems or data appear to be affected?",
+        "disconnect_now": "Has the affected system been disconnected from the internet? (yes/no)",
+        "sensitive_data": "Is sensitive or personal data involved? (yes/no)"
+    },
+    "system_hack": {
+        "unauthorized_access": "Is there evidence of unauthorized access? (yes/no)",
+        "system_type": "What type of system is affected (e.g. email, server, website)?",
+        "reported_to_it": "Has this been reported to IT or cybersecurity? (yes/no)"
+    },
+    "phishing_attack": {
+        "link_clicked": "Did anyone click the suspicious link or provide info? (yes/no)",
+        "email_content": "Can you describe the phishing email or message?"
+    },
+    "ransomware": {
+        "locked_out": "Are you locked out of your system or files? (yes/no)",
+        "ransom_demanded": "Was a ransom demand shown? If so, what did it say?"
+    },
+
+    #utility_emergency_questions
+    "gas_line_rupture": {
+        "location": "Where is the rupture located?",
+        "evacuated_area": "Has the area been evacuated? (yes/no)",
+        "strong_smell": "Is there a strong smell of gas? (yes/no)"
+    },
+    "water_main_break": {
+        "location": "Where is the water main break?",
+        "flooding": "Is there flooding in the area? (yes/no)",
+        "water_pressure": "Is there a loss of water pressure? (yes/no)"
+    },
+    "power_grid_failure": {
+        "area_affected": "What area is affected by the power outage?",
+        "duration": "How long has the power been out?",
+        "downed_lines": "Are there downed power lines? (yes/no)"
+    },
+
+    #weather_alert_questions
+    "heavy_snowfall": {
+        "snow_depth": "How deep is the snow?",
+        "travel_impacted": "Is travel impacted? (yes/no)",
+        "power_outage": "Are there any power outages? (yes/no)"
+    },
+    "blizzard": {
+        "visibility": "What is the visibility like? (poor/fair/good)",
+        "travel_impacted": "Is travel severely impacted? (yes/no)",
+        "shelter_needed": "Is shelter needed for anyone? (yes/no)"
+    },
+    "heatwave": {
+        "temperature": "What is the current temperature?",
+        "heat_advisories": "Are there any heat advisories in effect? (yes/no)",
+        "vulnerable_people": "Are there vulnerable people needing assistance? (yes/no)"
+    },
+    "storm_surge": {
+        "flooding": "Is there flooding due to the storm surge? (yes/no)",
+        "evacuated": "Has the area been evacuated? (yes/no)",
+        "property_damage": "Is there property damage? (yes/no)"
+    },
+
+    #marine_incident_questions
+    "boat_capsize": {
+        "people_overboard": "Are there people in the water? (yes/no)",
+        "rescue_in_progress": "Is a rescue in progress? (yes/no)",
+        "location": "Where did the capsizing occur?"
+    },
+    "drowning": {
+        "person_in_water": "Is the person still in the water? (yes/no)",
+        "rescue_attempted": "Has a rescue attempt been made? (yes/no)",
+        "location": "Where did this occur?"
+    },
+    "oil_spill": {
+        "spill_size": "How large is the oil spill?",
+        "environmental_impact": "Is there an environmental impact? (yes/no)",
+        "cleanup_initiated": "Has cleanup been initiated? (yes/no)"
+    },
+    "water_rescue": {
+        "people_in_water": "How many people are in the water?",
+        "rescue_in_progress": "Is a rescue operation currently in progress? (yes/no)",
+        "location": "Where is the rescue taking place?"
+    },
+
+    #aviation_incident_questions
+    "airplane_crash": {
+        "location": "Where did the crash occur?",
+        "injuries_reported": "Are there injuries reported? (yes/no)",
+        "rescue_in_progress": "Is a rescue operation in progress? (yes/no)"
+    },
+    "emergency_landing": {
+        "location": "Where did the emergency landing occur?",
+        "aircraft_type": "What type of aircraft is involved?",
+        "passengers_injured": "Are there any injured passengers? (yes/no)"
+    },
+    "mid_air_distress": {
+        "aircraft_type": "What type of aircraft is involved?",
+        "nature_of_distress": "What is the nature of the distress?",
+        "location": "Where is the aircraft currently located?"
+    },
+    #public_health_incident_questions
+    "disease_outbreak": {
+        "disease_name": "What disease is suspected?",
+        "number_infected": "How many people are infected?",
+        "symptoms_observed": "What symptoms are being observed?"
+    },
+    "food_contamination": {
+        "contaminated_food": "What food is suspected of contamination?",
+        "symptoms_reported": "What symptoms are being reported?",
+        "number_affected": "How many people are affected?"
+    },
+    "mass_poisoning": {
+        "poison_source": "What is the suspected source of the poisoning?",
+        "number_affected": "How many people are affected?",
+        "symptoms_observed": "What symptoms are being observed?"
+    },
+    #crowd_control_questions
+    "riot": {
+        "location": "Where is the riot occurring?",
+        "number_of_people": "How many people are involved?",
+        "weapons_present": "Are there any weapons present? (yes/no)"
+    },
+    "stampede": {
+        "location": "Where is the stampede occurring?",
+        "number_of_people": "How many people are involved?",
+        "injuries_reported": "Are there any injuries reported? (yes/no)"
+    },
+    "mass_protest": {
+        "location": "Where is the protest occurring?",
+        "number_of_people": "How many people are involved?",
+        "any_violence": "Is there any violence or property damage? (yes/no)"
+    },
+    "overcrowded_event": {
+        "event_type": "What type of event is it (concert, sports, etc.)?",
+        "number_of_people": "How many people are present?",
+        "safety_concerns": "Are there any safety concerns? (yes/no)"
+    },
+    #infrastructure_failure_questions
+    "bridge_collapse": {
+        "location": "Where did the collapse occur?",
+        "people_trapped": "Are there people trapped? (yes/no)",
+        "extent_of_damage": "Describe the extent of the damage."
+    },
+    "tunnel_cave_in": {
+        "location": "Where did the cave-in occur?",
+        "people_trapped": "Are there people trapped? (yes/no)",
+        "extent_of_damage": "Describe the extent of the damage."
+    },
+    "building_integrity_risk": {
+        "location": "Where is the building located?",
+        "visible_damage": "Is there visible damage to the building? (yes/no)",
+        "people_inside": "Are there people still inside? (yes/no)"
     }
 }
 
@@ -459,6 +643,53 @@ special_situation_feedback = {
     "alarm_activation": "Evacuate if it's a fire alarm. Wait for emergency responders to assess the situation."
 }
 
+cyber_feedback = {
+    "data_breach": "Disconnect affected systems. Notify cybersecurity team immediately.",
+    "system_hack": "Do not use the system. Notify IT/security and preserve any evidence.",
+    "phishing_attack": "Do not click further. Report to your IT/security team.",
+    "ransomware": "Do not pay ransom. Disconnect affected systems and contact IT security."
+}
+
+utility_feedback = {
+    "gas_line_rupture": "Avoid using electronics or lights. Evacuate the area and alert others.",
+    "water_main_break": "Avoid the flooded area. Do not use electrical appliances if water is near.",
+    "power_grid_failure": "Stay indoors if safe. Report downed lines and avoid contact with them."
+}
+
+weather_alert_feedback = {
+    "heavy_snowfall": "Avoid travel unless necessary. Clear snow from driveways and walkways.",
+    "blizzard": "Stay indoors. Keep warm and have emergency supplies ready.",
+    "heatwave": "Stay hydrated. Avoid outdoor activities during peak heat. Use fans or AC if available.",
+    "storm_surge": "Evacuate if instructed. Move to higher ground and avoid coastal areas."
+}
+marine_feedback = {
+    "boat_capsize": "Call for marine rescue. Do not enter rough waters unless trained.",
+    "drowning": "Call 911 and keep the person in sight. Use a flotation device if available.",
+    "oil_spill": "Avoid contact. Report the source and extent to environmental authorities.",
+    "water_rescue": "Do not attempt rescue without training. Wait for marine responders."
+}
+aviation_feedback = {
+    "airplane_crash": "Move to a safe distance. Do not enter the crash site unless trained.",
+    "emergency_landing": "Clear the area if safe. Assist passengers if needed.",
+    "mid_air_distress": "Contact air traffic control. Provide as much detail as possible."
+}
+public_health_feedback = {
+    "disease_outbreak": "Isolate affected individuals. Report to public health authorities.",
+    "food_contamination": "Do not consume the food. Report to health department.",
+    "mass_poisoning": "Keep affected individuals calm. Do not induce vomiting unless instructed."
+}
+crowd_control_feedback = {
+    "riot": "Stay away from the area. Do not engage. Report details to police.",
+    "stampede": "Find a safe place to shelter. Do not try to stop the crowd.",
+    "mass_protest": "Avoid confrontation. Stay safe and report any violence.",
+    "overcrowded_event": "Alert event security. Help direct people to safety if possible."
+}
+infrastructure_feedback = {
+    "bridge_collapse": "Stay away from the area. Do not attempt to cross or enter.",
+    "tunnel_cave_in": "Avoid the area. Report to authorities and assist with evacuation if safe.",
+    "building_integrity_risk": "Evacuate the building if safe. Do not re-enter until cleared by professionals."
+}
+
 # Emergency responders for each incident type
 responders = {
     "medical": [
@@ -487,10 +718,45 @@ responders = {
         "Police Officers", "SWAT Team", "Crisis Negotiators",
         "Bomb Squad", "Paramedics", "Animal Control",
         "Mental Health Crisis Team"
+    ],
+    "special_situations": [
+        "Police Officers", "SWAT Team", "Crisis Negotiators",
+        "Bomb Squad", "Paramedics", "Animal Control",
+        "Mental Health Crisis Team"
+    ],
+    "cyber_incident": [
+        "Cybersecurity Team", "Digital Forensics Experts",
+        "Police Cybercrime Unit", "IT Department"
+    ],
+    "utility_emergency": [
+        "Utility Company", "Firefighters", "Police", "Environmental Safety Team"
+    ],
+    "weather_alert": [
+        "Meteorological Department", "Civil Defense / Disaster Relief",
+        "Medical Teams", "Utility Crews"
+    ],
+    "marine_incident": [
+        "Coast Guard", "Marine Rescue Teams", "Environmental Protection Agencies",
+        "Lifeguards", "Police (Marine Units)"
+    ],
+    "aviation_incident": [
+        "Airport Fire & Rescue", "Air Traffic Control", "Emergency Medical Teams",
+        "Aviation Safety Board", "Airport Police / Security"
+    ],
+    "public_health_incident": [
+        "Public Health Department", "Medical Teams", "Epidemiologists",
+        "Environmental Inspectors", "WHO/CDC"
+    ],
+    "crowd_control": [
+        "Riot Police", "Event Security", "Medical Teams",
+        "Firefighters", "Crowd Management Specialists"
+    ],
+    "infrastructure_failure": [
+        "Structural Engineers", "Firefighters", "Rescue Teams",
+        "Police", "Construction Crews", "Utility Workers"
     ]
 }
 
-# ================= IMPROVED HELPER FUNCTIONS =================
 
 def validate_input(prompt, validation_func, error_msg="Invalid input. Please try again."):
     """Generic input validation helper"""
@@ -549,6 +815,22 @@ def get_feedback(incident_type, specific_incident):
         return hazard_feedback.get(specific_incident, "Evacuate the area and avoid contact with the substance.")
     elif incident_type == "special_situations":
         return special_situation_feedback.get(specific_incident, "Stay in a safe location and follow instructions.")
+    elif incident_type == "cyber_incident":
+        return cyber_feedback.get(specific_incident, "Disconnect affected systems and notify IT.")
+    elif incident_type == "utility_emergency":
+        return utility_feedback.get(specific_incident, "Report the issue to the utility company.")
+    elif incident_type == "weather_alert":
+        return weather_alert_feedback.get(specific_incident, "Follow local advisories and stay safe.")
+    elif incident_type == "marine_incident":
+        return marine_feedback.get(specific_incident, "Call for marine rescue and stay clear of the area.")
+    elif incident_type == "aviation_incident":
+        return aviation_feedback.get(specific_incident, "Move to a safe distance and wait for responders.")
+    elif incident_type == "public_health_incident":
+        return public_health_feedback.get(specific_incident, "Isolate affected individuals and report to health authorities.")
+    elif incident_type == "crowd_control":
+        return crowd_control_feedback.get(specific_incident, "Avoid confrontation and report to police.")
+    elif incident_type == "infrastructure_failure":
+        return infrastructure_feedback.get(specific_incident, "Stay away from the area and report to authorities.")
     else:
         return "Help is on the way. Please remain calm."
 
