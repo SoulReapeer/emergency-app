@@ -1,4 +1,4 @@
-# IMPORTS
+# 1-IMPORTS
 import os
 from datetime import datetime
 import time
@@ -6,8 +6,7 @@ import re
 from threading import Lock
 import json
 
-
-# Configuration
+# 2-Configuration
 CONFIG = {
     "MAX_INCIDENTS_PER_REPORT": 10,
     "REFRESH_INTERVAL": 5,
@@ -27,13 +26,12 @@ CONFIG = {
     }
 }
 
-# Create log directories if not exists
+# 3-Create log directories if they do not exists
 for directory in [CONFIG["LOG_DIR"], CONFIG["RESOLVED_DIR"], CONFIG["RESPONDER_LOG_DIR"], 
                 CONFIG["REPORTS_DIR"], CONFIG["BACKUP_DIR"]]:
     os.makedirs(directory, exist_ok=True)
 
-
-# Incident display names and types
+# 4-Incident display names and types
 incident_display_names = {
     "cardiac_arrest": "Cardiac Arrest / Heart Attack",
     "stroke": "Stroke",
@@ -91,7 +89,8 @@ incident_display_names = {
     "kidnapping": "Kidnapping",
     "animal_attack": "Animal Attack",
     "emergency_assistance": "Emergency Assistance",
-    "alarm_activation": "Alarm Activation",   "data_breach": "Data Breach", 
+    "alarm_activation": "Alarm Activation",   
+    "data_breach": "Data Breach", 
     "system_hack": "System Hack",
     "phishing_attack": "Phishing Attack", 
     "ransomware": "Ransomware",
@@ -121,7 +120,7 @@ incident_display_names = {
     "building_integrity_risk": "Building Integrity Risk"
 }
 
-# Incident categories and their types
+# 5-Incident categories and their types
 incident_types = {
     "medical": [
         "cardiac_arrest", "stroke", "breathing_difficulty", "seizure",
@@ -180,7 +179,7 @@ incident_types = {
     ]
 }
 
-# General questions for all incidents
+# 6-General questions for all incidents
 general_questions = {
     "location": "What is the address of the emergency?",
     "phone_number": "What is the phone number you're calling from?",
@@ -197,9 +196,9 @@ general_questions = {
     "access_to_location": "Is there any difficulty accessing the location (e.g., locked gate, narrow alley)?"
 }
 
-# Incident-specific questions 
+# 7-Incident-specific questions 
 incident_questions = {
-    # Medical emergencies
+    # 7.1-Medical emergencies
     "cardiac_arrest": {
         "patient_age": "How old is the patient?",
         "conscious": "Is the patient conscious? (yes/no)",
@@ -254,7 +253,7 @@ incident_questions = {
         "weapons_present": "Are any weapons present? (yes/no)"
     },
 
-    # Fire emergencies
+    # 7.2-Fire emergencies
     "structure_fire": {
         "fire_description": "What is on fire and how big is it?",
         "people_inside": "Is anyone inside the building? (yes/no)"
@@ -284,7 +283,7 @@ incident_questions = {
         "injuries_reported": "Are there any injuries reported? (yes/no)"
     },
 
-    # Police emergencies
+    # 7.3-Police emergencies
     "robbery": {
         "suspect_description": "Can you describe the suspect?",
         "weapons_involved": "Were any weapons involved? (yes/no)"
@@ -330,7 +329,7 @@ incident_questions = {
         "people_involved": "How many people are involved?"
     },
 
-    # Traffic emergencies
+    # 7.4-Traffic emergencies
     "motor_vehicle_accident": {
         "injuries": "Are there any injuries? (yes/no)",
         "vehicles_involved": "How many vehicles are involved?"
@@ -356,7 +355,7 @@ incident_questions = {
         "injuries": "Are there injuries? (yes/no)"
     },
 
-    # Natural disasters
+    # 7.5-Natural disasters
     "flooding": {
         "water_depth": "How deep is the water?",
         "trapped_people": "Are any people trapped? (yes/no)"
@@ -390,7 +389,7 @@ incident_questions = {
         "downed_lines": "Are there downed power lines? (yes/no)"
     },
 
-    # Hazardous materials
+    # 7.6-Hazardous materials
     "chemical_spill": {
         "chemical_known": "Do you know what chemical was spilled? (yes/no)",
         "people_exposed": "Were any people exposed? (yes/no)"
@@ -416,7 +415,7 @@ incident_questions = {
         "immediate_threat": "Is there an immediate threat to life or property? (yes/no)"
     },
 
-    # Special situations
+    # 7.7-Special situations
     "suicidal_person": {
         "weapons_present": "Are weapons present? (yes/no)",
         "person_location": "Where is the person located?"
@@ -452,7 +451,7 @@ incident_questions = {
         "visible_issue": "Is there a visible emergency or damage? (yes/no)"
     },
 
-    #cyber_incident_questions
+    # 7.8-cyber_incident_questions
     "data_breach": {
         "systems_affected": "What systems or data appear to be affected?",
         "disconnect_now": "Has the affected system been disconnected from the internet? (yes/no)",
@@ -472,7 +471,7 @@ incident_questions = {
         "ransom_demanded": "Was a ransom demand shown? If so, what did it say?"
     },
 
-    #utility_emergency_questions
+    # 7.9-utility_emergency_questions
     "gas_line_rupture": {
         "location": "Where is the rupture located?",
         "evacuated_area": "Has the area been evacuated? (yes/no)",
@@ -489,7 +488,7 @@ incident_questions = {
         "downed_lines": "Are there downed power lines? (yes/no)"
     },
 
-    #weather_alert_questions
+    # 7.10-weather_alert_questions
     "heavy_snowfall": {
         "snow_depth": "How deep is the snow?",
         "travel_impacted": "Is travel impacted? (yes/no)",
@@ -511,7 +510,7 @@ incident_questions = {
         "property_damage": "Is there property damage? (yes/no)"
     },
 
-    #marine_incident_questions
+    # 7.11-marine_incident_questions
     "boat_capsize": {
         "people_overboard": "Are there people in the water? (yes/no)",
         "rescue_in_progress": "Is a rescue in progress? (yes/no)",
@@ -533,7 +532,7 @@ incident_questions = {
         "location": "Where is the rescue taking place?"
     },
 
-    #aviation_incident_questions
+    # 7.12-aviation_incident_questions
     "airplane_crash": {
         "location": "Where did the crash occur?",
         "injuries_reported": "Are there injuries reported? (yes/no)",
@@ -549,7 +548,8 @@ incident_questions = {
         "nature_of_distress": "What is the nature of the distress?",
         "location": "Where is the aircraft currently located?"
     },
-    #public_health_incident_questions
+
+    # 7.13-public_health_incident_questions
     "disease_outbreak": {
         "disease_name": "What disease is suspected?",
         "number_infected": "How many people are infected?",
@@ -565,7 +565,8 @@ incident_questions = {
         "number_affected": "How many people are affected?",
         "symptoms_observed": "What symptoms are being observed?"
     },
-    #crowd_control_questions
+
+    # 7.14-crowd_control_questions
     "riot": {
         "location": "Where is the riot occurring?",
         "number_of_people": "How many people are involved?",
@@ -586,7 +587,8 @@ incident_questions = {
         "number_of_people": "How many people are present?",
         "safety_concerns": "Are there any safety concerns? (yes/no)"
     },
-    #infrastructure_failure_questions
+
+    # 7.15-infrastructure_failure_questions
     "bridge_collapse": {
         "location": "Where did the collapse occur?",
         "people_trapped": "Are there people trapped? (yes/no)",
@@ -605,7 +607,7 @@ incident_questions = {
 }
 
 # Emergency feedback instructions
-medical_feedback = {
+medical_feedback = { # 8
     "cardiac_arrest": "Start CPR immediately if you're trained. Push hard and fast in the center of the chest.",
     "stroke": "Keep the person calm and still. Don't give them food, water, or medicine.",
     "breathing_difficulty": "Help the person sit upright. Use an inhaler if prescribed. Avoid crowding them.",
@@ -619,7 +621,7 @@ medical_feedback = {
     "mental_health_crisis": "Speak calmly. Do not argue or escalate. Keep yourself and others safe."
 }
 
-fire_feedback = {
+fire_feedback = { # 9
     "structure_fire": "Evacuate immediately. Do not attempt to gather belongings. Stay low to avoid smoke.",
     "vehicle_fire": "Stay away from the vehicle. Do not try to extinguish it yourself if it's large.",
     "wildfire": "Leave the area immediately if instructed. Do not attempt to defend property.",
@@ -629,7 +631,7 @@ fire_feedback = {
     "explosion": "Move to a safe location. Watch for secondary explosions. Help others if safe."
 }
 
-police_feedback = {
+police_feedback = { # 10
     "robbery": "Stay on the line and in a safe location. Do not confront the suspect.",
     "assault": "Avoid engaging. Provide first aid to victims if safe. Stay on the scene until help arrives.",
     "suspicious_activity": "Do not approach. Observe from a distance and report details to the dispatcher.",
@@ -643,7 +645,7 @@ police_feedback = {
     "public_disturbance": "Stay calm and avoid escalation. Report numbers and any aggressive behavior."
 }
 
-traffic_feedback = {
+traffic_feedback = { # 11
     "motor_vehicle_accident": "Turn on hazard lights. Don't move injured people unless there's danger.",
     "hit_and_run": "Get the vehicle's plate number and description if safe. Do not chase the driver.",
     "pedestrian_struck": "Do not move the victim unless necessary. Keep them calm and still.",
@@ -652,7 +654,7 @@ traffic_feedback = {
     "highway_pileup": "Stay in your vehicle if safe. Turn on hazards and call emergency services."
 }
 
-disaster_feedback = {
+disaster_feedback = { # 12
     "flooding": "Avoid walking or driving through floodwaters. Move to higher ground immediately.",
     "earthquake": "Drop, cover, and hold on. Stay indoors until the shaking stops.",
     "tornado": "Seek shelter in a basement or interior room. Avoid windows.",
@@ -663,7 +665,7 @@ disaster_feedback = {
     "power_outage": "Use flashlights instead of candles. Unplug appliances. Stay warm or cool appropriately."
 }
 
-hazard_feedback = {
+hazard_feedback = { # 13
     "chemical_spill": "Avoid inhaling or touching the substance. Evacuate the area.",
     "gas_leak_or_smell": "Do not use electronics or ignite flames. Evacuate and report immediately.",
     "biohazard_exposure": "Limit contact. Wash with soap and water. Report exposure immediately.",
@@ -672,7 +674,7 @@ hazard_feedback = {
     "environmental_hazard": "Avoid the area. Warn others. Provide detailed information to emergency services."
 }
 
-special_situation_feedback = {
+special_situation_feedback = { # 14
     "suicidal_person": "Stay calm and keep the person talking. Remove any dangerous objects nearby.",
     "hostage_situation": "Stay quiet if you're involved. Do not attempt to negotiate or act. Follow dispatcher instructions.",
     "active_shooter": "Run, hide, fight—only if necessary. Stay quiet. Silence your phone.",
@@ -683,61 +685,59 @@ special_situation_feedback = {
     "alarm_activation": "Evacuate if it's a fire alarm. Wait for emergency responders to assess the situation."
 }
 
-cyber_feedback = {
+cyber_feedback = { # 15
     "data_breach": "Disconnect affected systems. Notify cybersecurity team immediately.",
     "system_hack": "Do not use the system. Notify IT/security and preserve any evidence.",
     "phishing_attack": "Do not click further. Report to your IT/security team.",
     "ransomware": "Do not pay ransom. Disconnect affected systems and contact IT security."
 }
 
-utility_feedback = {
+utility_feedback = { # 16
     "gas_line_rupture": "Avoid using electronics or lights. Evacuate the area and alert others.",
     "water_main_break": "Avoid the flooded area. Do not use electrical appliances if water is near.",
     "power_grid_failure": "Stay indoors if safe. Report downed lines and avoid contact with them."
 }
 
-weather_alert_feedback = {
+weather_alert_feedback = { # 17
     "heavy_snowfall": "Avoid travel unless necessary. Clear snow from driveways and walkways.",
     "blizzard": "Stay indoors. Keep warm and have emergency supplies ready.",
     "heatwave": "Stay hydrated. Avoid outdoor activities during peak heat. Use fans or AC if available.",
     "storm_surge": "Evacuate if instructed. Move to higher ground and avoid coastal areas."
 }
 
-marine_feedback = {
+marine_feedback = { # 18
     "boat_capsize": "Call for marine rescue. Do not enter rough waters unless trained.",
     "drowning": "Call 911 and keep the person in sight. Use a flotation device if available.",
     "oil_spill": "Avoid contact. Report the source and extent to environmental authorities.",
     "water_rescue": "Do not attempt rescue without training. Wait for marine responders."
 }
 
-aviation_feedback = {
+aviation_feedback = { # 19
     "airplane_crash": "Move to a safe distance. Do not enter the crash site unless trained.",
     "emergency_landing": "Clear the area if safe. Assist passengers if needed.",
     "mid_air_distress": "Contact air traffic control. Provide as much detail as possible."
 }
 
-public_health_feedback = {
+public_health_feedback = { # 20
     "disease_outbreak": "Isolate affected individuals. Report to public health authorities.",
     "food_contamination": "Do not consume the food. Report to health department.",
     "mass_poisoning": "Keep affected individuals calm. Do not induce vomiting unless instructed."
 }
 
-crowd_control_feedback = {
+crowd_control_feedback = { # 21
     "riot": "Stay away from the area. Do not engage. Report details to police.",
     "stampede": "Find a safe place to shelter. Do not try to stop the crowd.",
     "mass_protest": "Avoid confrontation. Stay safe and report any violence.",
     "overcrowded_event": "Alert event security. Help direct people to safety if possible."
 }
 
-infrastructure_feedback = {
+infrastructure_feedback = { # 22
     "bridge_collapse": "Stay away from the area. Do not attempt to cross or enter.",
     "tunnel_cave_in": "Avoid the area. Report to authorities and assist with evacuation if safe.",
     "building_integrity_risk": "Evacuate the building if safe. Do not re-enter until cleared by professionals."
 }
 
-
-
-# Emergency responders for each incident type
+# 23-Emergency responders for each incident type
 responders = {
     "medical": [
         "Paramedics", "Doctors", "Emergency Medical Technicians (EMTs)"
@@ -799,7 +799,7 @@ responders = {
     ]
 }
 
-# Categorized Responder Directory
+# 24-Categorized Responder Directory
 responder_categories = {
     "medical": ["Doctors", "Paramedics", "EMTs", "Medical Teams"],
     "fire": ["Firefighters", "Hazmat Team", "Rescue Squad"],
@@ -818,7 +818,7 @@ responder_categories = {
     "infrastructure_failure": ["Engineers", "Repair Crews"]
 }
 
-# Responder Management System
+# 25-Responder Management System
 responder_management_prompts = {
     "medical": {"unit_prompt": "Enter medical unit:", "destination_prompt": "Hospital destination:", "reason_prompt": "Transport reason:", "status_options": ["Admitted", "Under Treatment", "Discharged"]},
     "fire": {"unit_prompt": "Enter fire unit:", "destination_prompt": "Evacuation location:", "reason_prompt": "Deployment reason:", "status_options": ["Contained", "Under Control", "Extinguished"]},
@@ -837,7 +837,7 @@ responder_management_prompts = {
     "infrastructure_failure": {"unit_prompt": "Enter repair crew:", "destination_prompt": "Repair location:", "reason_prompt": "Repair reason:", "status_options": ["Repair Complete", "Structure Secured", "Ongoing Repair"]}
 }
 
-# Responder Management Database Structure
+# 26-Responder Management Database Structure
 RESPONDER_MANAGEMENT_TEMPLATES = {
     "medical": {
         "responder_sources": ["Hospital", "Clinic", "Ambulance Base", "Medical Team", "Field Hospital"],
@@ -931,15 +931,16 @@ RESPONDER_MANAGEMENT_TEMPLATES = {
     }
 }
 
-
-# Enhanced Systems
-class UserSession:
+# 27-Enhanced Systems
+class UserSession: 
+    # Initialize user session
     def __init__(self):
         self.logged_in_user = None
         self.user_role = None
         self.login_time = None
         self.activities = []
     
+    # User login
     def login(self, username, role):
         self.logged_in_user = username
         self.user_role = role
@@ -947,10 +948,12 @@ class UserSession:
         self.activities.append(f"Login at {self.login_time}")
         print(f"Welcome, {username} ({role})!")
     
+    # Log user activity
     def log_activity(self, activity):
         timestamp = datetime.now().strftime("%H:%M:%S")
         self.activities.append(f"{timestamp}: {activity}")
     
+    # Show session summary
     def show_session_summary(self):
         if self.logged_in_user:
             print(f"\n=== Session Summary for {self.logged_in_user} ===")
@@ -960,18 +963,21 @@ class UserSession:
             for activity in self.activities[-5:]:
                 print(f"  - {activity}")
     
+    # User logout
     def logout(self):
         if self.logged_in_user:
             self.log_activity("Logout")
             print(f"Goodbye, {self.logged_in_user}!")
             self.logged_in_user = None
 
-# Resource Management System
+# 28-Resource Management System
 class ResourceManager:
+    # Initialize resource manager
     def __init__(self):
         self.resources = CONFIG["RESOURCE_INVENTORY"].copy()
         self.deployed_resources = {}
     
+    # Deploy resources to an incident
     def deploy_resource(self, resource_type, incident_id, quantity=1):
         if self.resources.get(resource_type, 0) >= quantity:
             self.resources[resource_type] -= quantity
@@ -980,6 +986,7 @@ class ResourceManager:
             return True
         return False
     
+    # Return resources from an incident
     def return_resource(self, incident_id, resource_type, quantity=1):
         if self.deployed_resources.get(incident_id, {}).get(resource_type, 0) >= quantity:
             self.resources[resource_type] += quantity
@@ -987,17 +994,21 @@ class ResourceManager:
             return True
         return False
     
+    # Get current resource status
     def get_available_resources(self):
         return self.resources
     
+    # Get deployed resources
     def get_deployed_resources(self):
         return self.deployed_resources
 
-# User Management System
+# 29-User Management System
 class UserManager:
+    # Initialize user manager
     def __init__(self):
         self.users = self.load_users()
     
+    # Load users from file or create default users
     def load_users(self):
         users_file = "users.txt"
         users = {}
@@ -1014,6 +1025,7 @@ class UserManager:
             users = self.create_default_users()
         return users
     
+    # Create default users
     def create_default_users(self):
         users = {
             "admin": {"password": "admin123", "role": "administrator"},
@@ -1023,17 +1035,20 @@ class UserManager:
         self.save_users(users)
         return users
     
+    # Save users to file
     def save_users(self, users):
         with open("users.txt", 'w') as f:
             for username, data in users.items():
                 f.write(f"{username}:{data['password']}:{data['role']}\n")
     
+    # Authenticate user credentials
     def authenticate_user(self, username, password):
         user = self.users.get(username)
         if user and user["password"] == password:
             return user
         return None
     
+    # Create a new user
     def create_user(self, username, password, role):
         if username not in self.users:
             self.users[username] = {"password": password, "role": role}
@@ -1041,12 +1056,15 @@ class UserManager:
             return True
         return False
 
+# 30-Responder Management System
 class ResponderManager:
+    # Initialize responder manager
     def __init__(self):
         self.responder_logs = {}
         self.management_file = "responder_management.db"
         self.load_management_data()
     
+    # Load management data from file
     def load_management_data(self):
         """Load responder management data from file"""
         if os.path.exists(self.management_file):
@@ -1058,11 +1076,13 @@ class ResponderManager:
         else:
             self.responder_logs = {}
     
+    # Save management data to file
     def save_management_data(self):
         """Save responder management data to file"""
         with open(self.management_file, 'w') as f:
             json.dump(self.responder_logs, f, indent=2)
     
+    # Log responder action for an incident
     def log_responder_action(self, incident_id, category, action_data):
         """Log responder management action"""
         if incident_id not in self.responder_logs:
@@ -1077,10 +1097,12 @@ class ResponderManager:
         self.save_management_data()
         return True
     
+    # Get responder log for a specific incident
     def get_incident_responder_log(self, incident_id):
         """Get responder management log for specific incident"""
         return self.responder_logs.get(incident_id, [])
     
+    # Get overall responder statistics
     def get_responder_stats(self, responder_type=None):
         """Get statistics about responder actions"""
         stats = {
@@ -1103,14 +1125,14 @@ class ResponderManager:
         
         return stats
 
-# GLOBAL INSTANCES AND UTILITIES
+# 31-GLOBAL INSTANCES AND UTILITIES
 file_lock = Lock()
 user_session = UserSession()
 resource_manager = ResourceManager()
 user_manager = UserManager()
 responder_manager = ResponderManager()
 
-# Utility Functions
+# 32-Utility Functions
 def validate_input(prompt, validation_func, error_msg="Invalid input. Please try again."):
     while True:
         user_input = input(prompt).strip()
@@ -1118,19 +1140,19 @@ def validate_input(prompt, validation_func, error_msg="Invalid input. Please try
             return user_input
         print(error_msg)
 
-# Validation functions
+# 33-Validation functions
 def validate_yes_no(input_str):
     return input_str.lower() in ('yes', 'no', 'y', 'n')
 
-# Simple phone number validation
+# 34-Simple phone number validation
 def validate_phone(phone_str):
     return any(re.match(pattern, phone_str) for pattern in CONFIG["VALID_PHONE_FORMATS"])
 
-# Simple text validation
+# 35-Simple text validation
 def validate_text(input_str):
     return all(c.isalnum() or c in CONFIG["ALLOWED_SPECIAL_CHARS"] for c in input_str)
 
-# Thread-safe file operations
+# 36-Thread-safe file operations
 def safe_write_file(filename, content):
     try:
         with file_lock:
@@ -1141,6 +1163,7 @@ def safe_write_file(filename, content):
         print(f"Error saving file: {e}")
         return False
 
+# 37-Thread-safe file reading
 def safe_read_file(filename):
     try:
         with file_lock:
@@ -1150,7 +1173,7 @@ def safe_read_file(filename):
         print(f"Error reading file: {e}")
         return None
 
-# Get feedback based on incident type and specific incident
+# 38-Get feedback based on incident type and specific incident
 def get_feedback(incident_type, specific_incident):
     feedback_mapping = {
         "medical": medical_feedback, "fire": fire_feedback, "police": police_feedback,
@@ -1163,7 +1186,7 @@ def get_feedback(incident_type, specific_incident):
     }
     return feedback_mapping.get(incident_type, {}).get(specific_incident, "Help is on the way. Please remain calm.")
 
-# Get next incident number
+# 39-Get next incident number
 def get_next_incident_number():
     try:
         incident_files = [f for f in os.listdir(CONFIG["LOG_DIR"]) if f.startswith("incident_") and f.endswith(".txt")]
@@ -1177,7 +1200,7 @@ def get_next_incident_number():
         print(f"Error getting next incident number: {e}")
         return 1
 
-# Question Asking System
+# 40-Question Asking System
 def ask_questions(questions):
     responses = {}
     for key, question in questions.items():
@@ -1193,7 +1216,7 @@ def ask_questions(questions):
         responses[key] = response
     return responses
 
-# Priority System
+# 41-Priority System
 def assign_incident_priority(incident_type, specific_incident, responses):
     priority_rules = {
         "medical": {"cardiac_arrest": "Critical", "stroke": "Critical", "unconscious_person": "Critical", 
@@ -1211,7 +1234,7 @@ def assign_incident_priority(incident_type, specific_incident, responses):
         elif priority == "Low": priority = "Medium"
     return priority
 
-# Auto-deploy resources based on incident type
+# 42-Auto-deploy resources based on incident type
 def auto_deploy_resources(incident_type, incident_id):
     deployment_rules = {
         "medical": {"ambulances": 1}, "fire": {"fire_trucks": 1, "ambulances": 1},
@@ -1222,7 +1245,7 @@ def auto_deploy_resources(incident_type, incident_id):
         if resource_manager.deploy_resource(resource, incident_id, quantity):
             print(f"Auto-deployed {quantity} {resource} to incident #{incident_id}")
 
-# Log Single Incident
+# 43-Log Single Incident
 def log_single_incident(responses, incident_type, specific_incident, feedback):
     try:
         incident_number = get_next_incident_number()
@@ -1252,7 +1275,7 @@ Specific Incident: {incident_display_names.get(specific_incident, specific_incid
         print(f"Critical error logging incident: {e}")
         return None
 
-# Responder Management System
+# 44-Responder Management System
 def responder_management(incident_id, incident_type, location):
     """Comprehensive responder management system for all categories"""
     print(f"\n=== RESPONDER MANAGEMENT: {incident_type.upper()} ===")
@@ -1329,7 +1352,54 @@ def responder_management(incident_id, incident_type, location):
         additional_info["suspects"] = validate_input("Number of suspects: ", lambda x: x.isdigit())
         additional_info["case_id"] = validate_input("Case ID (if any): ", validate_text)
     
-    # Add more category-specific details as needed...
+    elif incident_type == "traffic":
+        additional_info["vehicles_involved"] = validate_input("Vehicles involved: ", lambda x: x.isdigit())
+        additional_info["road_conditions"] = validate_input("Road conditions: ", validate_text)
+    
+    elif incident_type == "natural_disaster":
+        additional_info["people_rescued"] = validate_input("People rescued: ", lambda x: x.isdigit())
+        additional_info["supplies_distributed"] = validate_input("Supplies distributed: ", lambda x: x.isdigit())
+    
+    elif incident_type == "hazardous_material":         
+        additional_info["material_type"] = validate_input("Type of hazardous material: ", validate_text)
+        additional_info["containment_status"] = validate_input("Containment status: ", validate_text)
+    
+    elif incident_type == "special_situations":         
+        additional_info["operation_duration"] = validate_input("Operation duration (minutes): ", lambda x: x.isdigit())
+        additional_info["special_equipment_used"] = validate_input("Special equipment used: ", validate_text)
+    
+    elif incident_type == "cyber_incident":
+        additional_info["systems_affected"] = validate_input("Systems affected: ", validate_text)
+        additional_info["data_breach"] = validate_input("Data breach occurred (yes/no): ", validate_yes_no)
+    
+    elif incident_type == "utility_emergency":
+        additional_info["service_type"] = validate_input("Type of utility service: ", validate_text)
+        additional_info["outage_duration"] = validate_input("Outage duration (minutes): ", lambda x: x.isdigit())
+    
+    elif incident_type == "weather_alert":
+        additional_info["alert_level"] = validate_input("Alert level: ", validate_text)
+        additional_info["areas_affected"] = validate_input("Areas affected: ", validate_text)
+    
+    elif incident_type == "marine_incident":
+        additional_info["vessel_type"] = validate_input("Type of vessel: ", validate_text)
+        additional_info["rescue_operations"] = validate_input("Rescue operations conducted: ", lambda x: x.isdigit())
+    
+    elif incident_type == "aviation_incident":
+        additional_info["aircraft_type"] = validate_input("Type of aircraft: ", validate_text)
+        additional_info["passenger_count"] = validate_input("Number of passengers: ", lambda x: x.isdigit())
+    
+    elif incident_type == "public_health_incident":
+        additional_info["disease_type"] = validate_input("Type of disease: ", validate_text)
+        additional_info["cases_reported"] = validate_input("Number of cases reported: ", lambda x: x.isdigit())
+    
+    elif incident_type == "crowd_control":
+        additional_info["crowd_size"] = validate_input("Estimated crowd size: ", lambda x: x.isdigit())
+        additional_info["incidents_reported"] = validate_input("Incidents reported: ", lambda x: x.isdigit())
+    
+    elif incident_type == "infrastructure_failure":
+        additional_info["structure_type"] = validate_input("Type of structure: ", validate_text)
+        additional_info["repair_estimate"] = validate_input("Estimated repair time (hours): ", lambda x: x.isdigit())
+    
     
     # Create management record
     management_data = {
@@ -1344,10 +1414,23 @@ def responder_management(incident_id, incident_type, location):
     # Log the action
     responder_manager.log_responder_action(incident_id, incident_type, management_data)
     
+    # Summary of management action
+    print("\n--- Summary of Responder Management ---") #section header
+    print(f"Responder Source: {responder_source}") #where responders came from
+    print(f"Destination: {destination}") #where resources/people were sent
+    print(f"Purpose: {purpose}") #purpose of action
+    print(f"Status: {status}") #current status
+    print(f"Location: {location}") #location of incident
+    if additional_info:
+        print("Additional Info:")
+        for k, v in additional_info.items():
+            print(f"  - {k.replace('_', ' ').capitalize()}: {v}") #formatted key-value nicely
+            
     print(f"\n✅ Responder management logged for incident #{incident_id}")
+
     return management_data
 
-# User Authentication
+# 45-User Authentication
 def authenticate_user():
     print("\n=== User Authentication ===")
     username = input("Username: ")
@@ -1357,7 +1440,7 @@ def authenticate_user():
     print("Authentication failed. Please try again.")
     return None, None
 
-# Categorized Responder Selection
+# 46-Categorized Responder Selection
 def show_categorized_responder_menu():
     print("\n=== Select Your Response Category ===")
     available_categories = [cat for cat in responder_categories.keys() if responder_categories[cat]]
@@ -1385,7 +1468,7 @@ def show_categorized_responder_menu():
         except ValueError:
             print(f"Please enter a number between 1-{len(roles)}")
 
-# Incident Retrieval
+# 47-Incident Retrieval
 def get_active_incidents():
     try:
         incident_files = [f for f in os.listdir(CONFIG["LOG_DIR"]) if f.startswith("incident_") and f.endswith(".txt")]
@@ -1395,7 +1478,7 @@ def get_active_incidents():
         print(f"Error getting active incidents: {e}")
         return []
 
-# Incident List Display
+# 48-Incident List Display
 def display_incident_list(incident_files):
     print("\n=== Active Incidents ===")
     print(f"{'#':<3} {'Type':<20} {'Location':<30} {'Time':<20}")
@@ -1403,17 +1486,29 @@ def display_incident_list(incident_files):
     for i, filename in enumerate(incident_files, 1):
         try:
             content = safe_read_file(filename)
-            if not content: continue
+            if not content: 
+                print(f"{i:<3} Unable to read file")
+                continue
+            
+            # Debug: show first few lines of content
+            print(f"DEBUG: {filename} content starts with:")
+            for j, line in enumerate(content.split('\n')[:5]):
+                print(f"  {j}: {line}")
+            
             incident_type, location, timestamp = "Unknown", "Unknown", "Unknown"
             for line in content.split('\n'):
-                if line.startswith("Emergency Type:"): incident_type = line.split(":")[1].strip()
-                elif line.startswith("location:"): location = line.split(":")[1].strip()
-                elif line.startswith("Reported at:"): timestamp = line.split(":")[1].strip()
+                if line.startswith("Emergency Type:"): 
+                    incident_type = line.split(":")[1].strip()
+                elif line.startswith("Location:"): 
+                    location = line.split(":")[1].strip()
+                elif line.startswith("Reported at:"): 
+                    timestamp = line.split(":")[1].strip()
+            
             print(f"{i:<3} {incident_type[:18]:<20} {location[:28]:<30} {timestamp[:18]:<20}")
         except Exception as e:
             print(f"Error displaying incident {filename}: {e}")
 
-# Incident Detail View and Recommendations
+# 49-Incident Detail View and Recommendations
 def display_incident_details(filename, responder_role, responder_category):
     content = safe_read_file(filename)
     if not content: return None, None
@@ -1421,9 +1516,11 @@ def display_incident_details(filename, responder_role, responder_category):
     
     incident_type, location = None, None
     for line in content.split('\n'):
-        if line.startswith("Emergency Type:"): incident_type = line.split(":")[1].strip()
-        elif line.startswith("location:"): location = line.split(":")[1].strip()
-    
+        if line.startswith("Emergency Type:"): 
+            incident_type = line.split(":")[1].strip()
+        elif line.startswith("Location:"):  # Changed to capital L
+            location = line.split(":")[1].strip()
+
     if incident_type and incident_type in responders:
         print("\n[SUGGESTED RESPONSE TEAM]")
         print(', '.join(responders[incident_type]))
@@ -1434,7 +1531,7 @@ def display_incident_details(filename, responder_role, responder_category):
     
     return incident_type, location
 
-# Responder Interaction Loop
+# 50-Responder Interaction Loop
 def handle_responder_input(incident_files, responder_role, responder_category):
     print("\n[ACTIONS] Enter incident number to view details")
     print("Press 'r' to refresh list")
@@ -1512,7 +1609,7 @@ def handle_responder_input(incident_files, responder_role, responder_category):
         except ValueError:
             print("Invalid input. Please enter a number, 'r', or 'q'")
 
-# Backup and Reporting Systems
+# 51-Backup and Reporting Systems
 def backup_system_data():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     backup_dir = os.path.join(CONFIG["BACKUP_DIR"], f"backup_{timestamp}")
@@ -1532,6 +1629,7 @@ def backup_system_data():
     print(f"Backup created: {backup_dir}")
     return backup_dir
 
+# 52-Responder Report Generation
 def generate_responder_report():
     """Generate comprehensive responder management report"""
     stats = responder_manager.get_responder_stats()
@@ -1563,6 +1661,7 @@ Total Incidents Managed: {stats['total_incidents']}
     print(f"Responder report generated: {report_file}")
     return report_file
 
+# 53-View Responder Management Details
 def view_responder_management(incident_id):
     """View responder management details for specific incident"""
     actions = responder_manager.get_incident_responder_log(incident_id)
@@ -1586,7 +1685,7 @@ def view_responder_management(incident_id):
             for key, value in action['additional_info'].items():
                 print(f"  {key}: {value}")
 
-# Daily Reporting
+# 54-Daily Reporting
 def generate_daily_report():
     today = datetime.now().strftime("%Y-%m-%d")
     incident_files = [f for f in os.listdir(CONFIG["LOG_DIR"]) if f.startswith("incident_") and today in f]
@@ -1618,7 +1717,7 @@ def generate_daily_report():
     print(f"Daily report generated: {report_file}")
     return report_file
 
-# System Statistics
+# 55-System Statistics
 def show_system_statistics():
     print("\n=== System Statistics ===")
     active_incidents = len([f for f in os.listdir(CONFIG["LOG_DIR"]) if f.startswith("incident_")])
@@ -1650,7 +1749,7 @@ def show_system_statistics():
     for category, count in category_count.items(): print(f"  {category}: {count}")
 
 
-# User Management
+# 56-User Management
 def manage_users_menu():
     if user_session.user_role != "administrator":
         print("Access denied. Administrator privileges required.")
@@ -1677,7 +1776,7 @@ def manage_users_menu():
         elif choice == '3': break
         else: print("Invalid choice. Please try again.")
 
-# Resource Status Display
+# 57-Resource Status Display
 def show_resource_status():
     print("\n=== Resource Status ===")
     available = resource_manager.get_available_resources()
@@ -1693,6 +1792,7 @@ def show_resource_status():
             for resource, count in resources.items(): print(f"    {resource}: {count}")
     else: print("  No resources currently deployed")
 
+# 58-Multi-Incident Reporting System
 def handle_multi_incident_report():
     """Handle reporting of multiple incidents across categories in one go"""
     print("\n=== Emergency Reporting ===\n")
@@ -1784,8 +1884,7 @@ def handle_multi_incident_report():
     print(f"\n{'-' * 50}")
     print("Now please provide extra details for the selected incidents:\n")
     
-    # Now ask specific questions for each incident
-    incident_reports = []
+    incident_reports = [] 
     
     for category, specific_incident in selected_incidents:
         display_name = incident_display_names.get(specific_incident, specific_incident.replace('_', ' ').title())
@@ -1814,6 +1913,7 @@ def handle_multi_incident_report():
     
     return incident_reports
 
+# 59-Consolidated Incident Logging
 def log_multi_incident_report(incident_reports):
     """Log multiple incidents with consolidated emergency instructions"""
     try:
@@ -1885,7 +1985,7 @@ Total Incident Types: {len(incident_reports)}
         print(f"Error logging incident report: {e}")
         return None
 
-# Reporter Mode
+# 60-Reporter Mode
 def handle_reporter_mode():
     """Main function for reporter operations - Now only multi-incident reporting"""
     print("\n=== Emergency Reporting ===")
@@ -1935,7 +2035,7 @@ def handle_reporter_mode():
                 print(f"  {category_feedback.get(category, 'Follow standard emergency procedures and await responder instructions.')}")
                 print()
 
-# Responder Mode
+# 61-Responder Mode
 def handle_receiver_mode():
     user, username = authenticate_user()
     if not user: return
@@ -1967,7 +2067,7 @@ def handle_receiver_mode():
     except Exception as e: print(f"Error in responder mode: {e}")
     finally: user_session.logout()
 
-# Enhanced Menu System
+# 62-Enhanced Menu System
 def show_advanced_menu():
     while True:
         print("\n=== Advanced Menu ===")
@@ -1995,7 +2095,7 @@ def show_advanced_menu():
         elif choice == '9': break
         else: print("Invalid choice. Please enter a number between 1-9.")
 
-# Role Selection
+# 63-Role Selection
 def show_role_selection():
     print("\n=== Emergency Response System ===")
     print("What is your role?")
@@ -2007,7 +2107,7 @@ def show_role_selection():
         if choice in ('1', '2'): return choice
         print("Invalid input. Please enter 1 or 2")
 
-# Main Function
+# 64-Main Function
 def main():
     try:
         print("\n=== Emergency Response System ===")
@@ -2031,5 +2131,6 @@ def main():
     except Exception as e: print(f"Fatal error: {e}")
     finally: print("\nSystem shutdown")
 
+# 65-Entry Point
 if __name__ == "__main__":
     main()
