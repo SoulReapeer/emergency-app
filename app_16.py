@@ -1427,7 +1427,6 @@ def responder_management(incident_id, incident_type, location):
             print(f"  - {k.replace('_', ' ').capitalize()}: {v}") #formatted key-value nicely
             
     print(f"\n✅ Responder management logged for incident #{incident_id}")
-
     return management_data
 
 # 45-User Authentication
