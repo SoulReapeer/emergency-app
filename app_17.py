@@ -1,5 +1,5 @@
 # 1-IMPORTS
-import os
+import os 
 from datetime import datetime
 import time
 import re
@@ -1741,7 +1741,7 @@ def authenticate_user():
     print("\n=== User Authentication ===")
     username = input("Username: ")
     password = input("Password: ")
-    user = user_manager.authenticate_user(username, password)
+    user = user_manager.authenticate(username, password)
     if user: 
         return user, username
     print("Authentication failed. Please try again.")
@@ -2208,6 +2208,22 @@ def log_multi_incident_report(incident_reports):
     """Log multiple incidents with consolidated emergency instructions"""
     try:
         incident_number = get_next_incident_number()
+
+        # If only one incident, use its type and specific_incident
+        if len(incident_reports) == 1:
+            main_type = incident_reports[0]['incident_type']
+            main_specific = incident_reports[0]['specific_incident']
+        else:
+            main_type = "multi"
+            main_specific = "multiple_incidents"
+
+        # Create a consolidated incident record
+        incident_id = db_manager.execute_query(
+            """INSERT INTO incidents 
+            (incident_number, priority, emergency_type, specific_incident, location) 
+            VALUES (?, ?, ?, ?, ?)""",
+            (incident_number, "High", main_type, main_specific, incident_reports[0]['general_info']['location'])
+        )
 
         # Create a consolidated incident record
         incident_id = db_manager.execute_query(
