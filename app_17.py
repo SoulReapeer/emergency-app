@@ -1345,13 +1345,14 @@ class ResponderManager:
     def log_responder_action(self, incident_id, category, action_data):
         """Log responder management action"""
         additional_info = json.dumps(action_data.get('additional_info', {}))
+        specific_incident = action_data.get('specific_incident')
         
         self.db_manager.execute_query(
             """INSERT INTO responder_actions 
-            (incident_id, category, responder_source, destination, purpose, status, location, additional_info) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (incident_id, category, action_data['responder_source'], action_data['destination'], 
-            action_data['purpose'], action_data['status'], action_data['location'], additional_info)
+            (incident_id, category, specific_incident, responder_source, destination, purpose, status, location, additional_info) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (incident_id, category, specific_incident, action_data.get('responder_source'), action_data.get('destination'), 
+            action_data.get('purpose'), action_data.get('status'), action_data.get('location'), additional_info)
         )
         
         return True
@@ -1583,140 +1584,199 @@ def log_incident_to_db(responses, incident_type, specific_incident, feedback=Non
 
 
 #42-Responder Management System
-def responder_management(incident_id, incident_type, location):
+def responder_management(incident_id, incident_type, location, responder_role=None, responder_category=None):
     """Comprehensive responder management system for all categories"""
-    print(f"\n=== RESPONDER MANAGEMENT: {incident_type.upper()} ===")
+    # If this is a consolidated 'multi' incident, allow the responder to pick
+    # which specific incident/category they want to manage.
+    if incident_type == "multi":
+        # Fetch sub-incident types recorded for this consolidated incident
+        details = db_manager.execute_query(
+            "SELECT question_key, response FROM incident_details WHERE incident_id = ? AND question_key LIKE '%_type'",
+            (incident_id,)
+        )
 
-    if incident_type not in RESPONDER_MANAGEMENT_TEMPLATES:
-        print("No specific responder management for this incident type.")
-        return None
+        if not details:
+            print(f"\n=== RESPONDER MANAGEMENT: MULTI ===")
+            print("No specific responder management available for this multi-incident (no sub-types recorded).")
+            return None
 
-    template = RESPONDER_MANAGEMENT_TEMPLATES[incident_type]
+        # Build a list of available categories found
+        category_map = []  # list of tuples (category_key, specific_incident)
+        for row in details:
+            row = dict(row)
+            qk = row.get('question_key', '')
+            resp = row.get('response', '')
+            # question_key stored as '<category>_type'
+            if qk.endswith('_type'):
+                cat = qk[:-5]
+                category_map.append((cat, resp))
 
-    print("\n--- Responder Source ---")
-    print("Where did the responders come from?")
-    for i, source in enumerate(template["responder_sources"], 1):
-        print(f"{i}. {source}")
-    print(f"{len(template['responder_sources'])+1}. Custom source")
+        # Prompt responder to pick which category to manage
+        print(f"\n=== RESPONDER MANAGEMENT: MULTI (Select sub-incident) ===")
+        for i, (cat, spec) in enumerate(category_map, 1):
+            display = incident_display_names.get(spec, spec.replace('_', ' ').title())
+            # Provide a small menu so responders can perform multiple actions and return
+            while True:
+                print(f"\n=== RESPONDER MANAGEMENT: {incident_type.upper()} ===")
+                print("1. Create/Log a responder management action")
+                print("2. View responder management log for this incident")
+                print("3. Return to previous menu")
 
-    source_choice = validate_input("Select responder source: ", 
-        lambda x: x.isdigit() and 1 <= int(x) <= len(template["responder_sources"])+1)
+                choice = validate_input("Select an option (1-3): ", lambda x: x in ('1','2','3'))
+                if choice == '3':
+                    return None
 
-    if int(source_choice) <= len(template["responder_sources"]):
-        responder_source = template["responder_sources"][int(source_choice)-1]
-    else:
-        responder_source = validate_input("Enter custom responder source: ", validate_text)
+                if choice == '2':
+                    view_responder_management(incident_id)
+                    continue
 
-    print("\n--- Destination ---")
-    print("Where were people/resources sent?")
-    for i, destination in enumerate(template["destinations"], 1):
-        print(f"{i}. {destination}")
-    print(f"{len(template['destinations'])+1}. Custom destination")
+                # choice == '1' -> create/log an action (existing flow)
+                template = RESPONDER_MANAGEMENT_TEMPLATES.get(incident_type)
+                if not template:
+                    print("No specific responder management template for this incident type.")
+                    continue
 
-    dest_choice = validate_input("Select destination: ", 
-        lambda x: x.isdigit() and 1 <= int(x) <= len(template["destinations"])+1)
+                print("\n--- Responder Source ---")
+                print("Where did the responders come from?")
+                for i, source in enumerate(template["responder_sources"], 1):
+                    print(f"{i}. {source}")
+                print(f"{len(template['responder_sources'])+1}. Custom source")
 
-    if int(dest_choice) <= len(template["destinations"]):
-        destination = template["destinations"][int(dest_choice)-1]
-    else:
-        destination = validate_input("Enter custom destination: ", validate_text)
+                source_choice = validate_input("Select responder source: ", 
+                    lambda x: x.isdigit() and 1 <= int(x) <= len(template["responder_sources"])+1)
 
-    print("\n--- Purpose ---")
-    print("What was the purpose of this action?")
-    for i, purpose in enumerate(template["purposes"], 1):
-        print(f"{i}. {purpose}")
-    print(f"{len(template['purposes'])+1}. Custom purpose")
+                if int(source_choice) <= len(template["responder_sources"]):
+                    responder_source = template["responder_sources"][int(source_choice)-1]
+                else:
+                    responder_source = validate_input("Enter custom responder source: ", validate_text)
 
-    purpose_choice = validate_input("Select purpose: ", 
-        lambda x: x.isdigit() and 1 <= int(x) <= len(template["purposes"])+1)
+                print("\n--- Destination ---")
+                print("Where were people/resources sent?")
+                for i, destination in enumerate(template["destinations"], 1):
+                    print(f"{i}. {destination}")
+                print(f"{len(template['destinations'])+1}. Custom destination")
 
-    if int(purpose_choice) <= len(template["purposes"]):
-        purpose = template["purposes"][int(purpose_choice)-1]
-    else:
-        purpose = validate_input("Enter custom purpose: ", validate_text)
+                dest_choice = validate_input("Select destination: ", 
+                    lambda x: x.isdigit() and 1 <= int(x) <= len(template["destinations"]) + 1)
 
-    print("\n--- Status ---")
-    print("Current status of this response:")
-    for i, status in enumerate(template["status_options"], 1):
-        print(f"{i}. {status}")
+                if int(dest_choice) <= len(template["destinations"]):
+                    destination = template["destinations"][int(dest_choice)-1]
+                else:
+                    destination = validate_input("Enter custom destination: ", validate_text)
 
-    status_choice = validate_input("Select status: ", 
-        lambda x: x.isdigit() and 1 <= int(x) <= len(template["status_options"]))
+                print("\n--- Purpose ---")
+                print("What was the purpose of this action?")
+                for i, purpose in enumerate(template["purposes"], 1):
+                    print(f"{i}. {purpose}")
+                print(f"{len(template['purposes'])+1}. Custom purpose")
 
-    status = template["status_options"][int(status_choice)-1]
+                purpose_choice = validate_input("Select purpose: ", 
+                    lambda x: x.isdigit() and 1 <= int(x) <= len(template["purposes"]) + 1)
 
-    # Additional details based on category
-    additional_info = {}
-    if incident_type == "medical":
-        additional_info["patient_count"] = validate_input("Number of patients: ", lambda x: x.isdigit())
-        additional_info["condition"] = validate_input("Overall condition: ", validate_text)
+                if int(purpose_choice) <= len(template["purposes"]):
+                    purpose = template["purposes"][int(purpose_choice)-1]
+                else:
+                    purpose = validate_input("Enter custom purpose: ", validate_text)
 
-    elif incident_type == "fire":
-        additional_info["units_dispatched"] = validate_input("Units dispatched: ", validate_text)
-        additional_info["casualties"] = validate_input("Casualties reported: ", lambda x: x.isdigit())
+                print("\n--- Status ---")
+                print("Current status of this response:")
+                for i, status in enumerate(template["status_options"], 1):
+                    print(f"{i}. {status}")
 
-    elif incident_type == "police":
-        additional_info["suspects"] = validate_input("Number of suspects: ", lambda x: x.isdigit())
-        additional_info["case_id"] = validate_input("Case ID (if any): ", validate_text)
+                status_choice = validate_input("Select status: ", 
+                    lambda x: x.isdigit() and 1 <= int(x) <= len(template["status_options"]))
 
-    elif incident_type == "traffic":
-        additional_info["vehicles_involved"] = validate_input("Vehicles involved: ", lambda x: x.isdigit())
-        additional_info["road_conditions"] = validate_input("Road conditions: ", validate_text)
+                status = template["status_options"][int(status_choice)-1]
 
-    elif incident_type == "natural_disaster":
-        additional_info["people_rescued"] = validate_input("People rescued: ", lambda x: x.isdigit())
-        additional_info["supplies_distributed"] = validate_input("Supplies distributed: ", lambda x: x.isdigit())
+                # Additional details based on category
+                additional_info = {}
+                if incident_type == "medical":
+                    additional_info["patient_count"] = validate_input("Number of patients: ", lambda x: x.isdigit())
+                    additional_info["condition"] = validate_input("Overall condition: ", validate_text)
 
-    elif incident_type == "hazardous_material":         
-        additional_info["material_type"] = validate_input("Type of hazardous material: ", validate_text)
-        additional_info["containment_status"] = validate_input("Containment status: ", validate_text)
+                elif incident_type == "fire":
+                    additional_info["units_dispatched"] = validate_input("Units dispatched: ", validate_text)
+                    additional_info["casualties"] = validate_input("Casualties reported: ", lambda x: x.isdigit())
 
-    elif incident_type == "special_situations":         
-        additional_info["operation_duration"] = validate_input("Operation duration (minutes): ", lambda x: x.isdigit())
-        additional_info["special_equipment_used"] = validate_input("Special equipment used: ", validate_text)
+                elif incident_type == "police":
+                    additional_info["suspects"] = validate_input("Number of suspects: ", lambda x: x.isdigit())
+                    additional_info["case_id"] = validate_input("Case ID (if any): ", validate_text)
 
-    elif incident_type == "cyber_incident":
-        additional_info["systems_affected"] = validate_input("Systems affected: ", validate_text)
-        additional_info["data_breach"] = validate_input("Data breach occurred (yes/no): ", validate_yes_no)
+                elif incident_type == "traffic":
+                    additional_info["vehicles_involved"] = validate_input("Vehicles involved: ", lambda x: x.isdigit())
+                    additional_info["road_conditions"] = validate_input("Road conditions: ", validate_text)
 
-    elif incident_type == "utility_emergency":
-        additional_info["service_type"] = validate_input("Type of utility service: ", validate_text)
-        additional_info["outage_duration"] = validate_input("Outage duration (minutes): ", lambda x: x.isdigit())
+                elif incident_type == "natural_disaster":
+                    additional_info["people_rescued"] = validate_input("People rescued: ", lambda x: x.isdigit())
+                    additional_info["supplies_distributed"] = validate_input("Supplies distributed: ", lambda x: x.isdigit())
 
-    elif incident_type == "weather_alert":
-        additional_info["alert_level"] = validate_input("Alert level: ", validate_text)
-        additional_info["areas_affected"] = validate_input("Areas affected: ", validate_text)
+                elif incident_type == "hazardous_material":         
+                    additional_info["material_type"] = validate_input("Type of hazardous material: ", validate_text)
+                    additional_info["containment_status"] = validate_input("Containment status: ", validate_text)
 
-    elif incident_type == "marine_incident":
-        additional_info["vessel_type"] = validate_input("Type of vessel: ", validate_text)
-        additional_info["rescue_operations"] = validate_input("Rescue operations conducted: ", lambda x: x.isdigit())
+                elif incident_type == "special_situations":         
+                    additional_info["operation_duration"] = validate_input("Operation duration (minutes): ", lambda x: x.isdigit())
+                    additional_info["special_equipment_used"] = validate_input("Special equipment used: ", validate_text)
 
-    elif incident_type == "aviation_incident":
-        additional_info["aircraft_type"] = validate_input("Type of aircraft: ", validate_text)
-        additional_info["passenger_count"] = validate_input("Number of passengers: ", lambda x: x.isdigit())
+                elif incident_type == "cyber_incident":
+                    additional_info["systems_affected"] = validate_input("Systems affected: ", validate_text)
+                    additional_info["data_breach"] = validate_input("Data breach occurred (yes/no): ", validate_yes_no)
 
-    elif incident_type == "public_health_incident":
-        additional_info["disease_type"] = validate_input("Type of disease: ", validate_text)
-        additional_info["cases_reported"] = validate_input("Number of cases reported: ", lambda x: x.isdigit())
+                elif incident_type == "utility_emergency":
+                    additional_info["service_type"] = validate_input("Type of utility service: ", validate_text)
+                    additional_info["outage_duration"] = validate_input("Outage duration (minutes): ", lambda x: x.isdigit())
 
-    elif incident_type == "crowd_control":
-        additional_info["crowd_size"] = validate_input("Estimated crowd size: ", lambda x: x.isdigit())
-        additional_info["incidents_reported"] = validate_input("Incidents reported: ", lambda x: x.isdigit())
+                elif incident_type == "weather_alert":
+                    additional_info["alert_level"] = validate_input("Alert level: ", validate_text)
+                    additional_info["areas_affected"] = validate_input("Areas affected: ", validate_text)
 
-    elif incident_type == "infrastructure_failure":
-        additional_info["structure_type"] = validate_input("Type of structure: ", validate_text)
-        additional_info["repair_estimate"] = validate_input("Estimated repair time (hours): ", lambda x: x.isdigit())
+                elif incident_type == "marine_incident":
+                    additional_info["vessel_type"] = validate_input("Type of vessel: ", validate_text)
+                    additional_info["rescue_operations"] = validate_input("Rescue operations conducted: ", lambda x: x.isdigit())
 
-    # Create management record
-    management_data = {
-        "responder_source": responder_source,
-        "destination": destination,
-        "purpose": purpose,
-        "status": status,
-        "location": location,
-        "additional_info": additional_info
-    }
+                elif incident_type == "aviation_incident":
+                    additional_info["aircraft_type"] = validate_input("Type of aircraft: ", validate_text)
+                    additional_info["passenger_count"] = validate_input("Number of passengers: ", lambda x: x.isdigit())
 
+                elif incident_type == "public_health_incident":
+                    additional_info["disease_type"] = validate_input("Type of disease: ", validate_text)
+                    additional_info["cases_reported"] = validate_input("Number of cases reported: ", lambda x: x.isdigit())
+
+                elif incident_type == "crowd_control":
+                    additional_info["crowd_size"] = validate_input("Estimated crowd size: ", lambda x: x.isdigit())
+                    additional_info["incidents_reported"] = validate_input("Incidents reported: ", lambda x: x.isdigit())
+
+                elif incident_type == "infrastructure_failure":
+                    additional_info["structure_type"] = validate_input("Type of structure: ", validate_text)
+                    additional_info["repair_estimate"] = validate_input("Estimated repair time (hours): ", lambda x: x.isdigit())
+
+                # Create management record
+                management_data = {
+                    "responder_source": responder_source,
+                    "destination": destination,
+                    "purpose": purpose,
+                    "status": status,
+                    "location": location,
+                    "additional_info": additional_info
+                }
+
+                # Log the action (optionally include which specific incident if provided)
+                responder_manager.log_responder_action(incident_id, incident_type, management_data)
+
+                # Summary of management action
+                print("\n--- Summary of Responder Management ---")
+                print(f"Responder Source: {responder_source}")
+                print(f"Destination: {destination}")
+                print(f"Purpose: {purpose}")
+                print(f"Status: {status}")
+                print(f"Location: {location}")
+                if additional_info:
+                    print("Additional Info:")
+                    for k, v in additional_info.items():
+                        print(f"  - {k.replace('_', ' ').capitalize()}: {v}")
+            
+                print(f"\n Responder management logged for incident #{incident_id}")
+                # After logging, loop back to the menu so the responder can perform more actions or return
     # Log the action
     responder_manager.log_responder_action(incident_id, incident_type, management_data)
 
@@ -1791,8 +1851,10 @@ def display_incident_list(incidents):
     print(f"{'#':<3} {'ID':<5} {'Type':<20} {'Location':<30} {'Time':<20}")
     print("-" * 80)
     for i, incident in enumerate(incidents, 1):
-        incident_time = incident['timestamp'].split(' ')[1] if ' ' in incident['timestamp'] else incident['timestamp']
-    print(f"{i:<3} {incident['id']:<5} {incident['emergency_type'][:18]:<20} {incident['location'][:28]:<30} {incident_time[:8]:<20}")
+        # Safely extract a short time portion if timestamp exists
+        timestamp = incident.get('timestamp', '') or ''
+        incident_time = (timestamp.split(' ')[1] if ' ' in timestamp else timestamp) or ''
+        print(f"{i:<3} {incident.get('id',''):<5} {incident.get('emergency_type','')[:18]:<20} {incident.get('location','')[:28]:<30} {incident_time[:8]:<20}")
 
 #47-Incident Detail View and Recommendations
 def display_incident_details(incident_id, responder_role, responder_category):
@@ -1887,9 +1949,20 @@ def handle_responder_input(incidents, responder_role, responder_category):
                         # Store notes in the database (could add a notes table)
                         print("Notes added.")
                     elif action == '4':
+                        # If this is a multi incident, check responder category membership first
+                        if incident_type == 'multi':
+                            details = db_manager.execute_query(
+                                "SELECT question_key FROM incident_details WHERE incident_id = ? AND question_key LIKE '%_type'",
+                                (incident['id'],)
+                            )
+                            allowed_categories = [dict(r)['question_key'][:-5] for r in details] if details else []
+                            if responder_category not in allowed_categories and responder_role != 'administrator':
+                                print("Access denied. You are not assigned to any of the categories in this multi-incident.")
+                                continue
+
                         if incident_type and location:
                             user_session.log_activity(f"Accessed responder management for incident #{incident['id']}")
-                            responder_info = responder_management(incident['id'], incident_type, location)
+                            responder_info = responder_management(incident['id'], incident_type, location, responder_role, responder_category)
                         else:
                             print("Cannot access responder management without incident type and location.")
                     elif action == '5':
@@ -1911,6 +1984,52 @@ def handle_responder_input(incidents, responder_role, responder_category):
             print(f"Please enter 1-{len(incidents)}, 'r', or 'q'")
         except ValueError:
             print("Invalid input. Please enter a number, 'r', or 'q'")
+
+    # Provide a quick way for responders to view a single category's incident types and active incidents
+def show_single_category_menu(responder_role, responder_category):
+    print("\n=== View Incident Types by Category ===")
+    categories = list(incident_types.keys())
+    for i, cat in enumerate(categories, 1):
+        print(f"{i}. {cat.replace('_', ' ').title()}")
+
+    choice = validate_input("Select a category number to view its incident types: ",
+                            lambda x: x.isdigit() and 1 <= int(x) <= len(categories))
+    cat = categories[int(choice)-1]
+
+    print(f"\n--- Incident types under {cat.replace('_', ' ').title()} ---")
+    types = incident_types.get(cat, [])
+    for i, t in enumerate(types, 1):
+        print(f"{i}. {incident_display_names.get(t, t.replace('_', ' ').title())} ({t})")
+
+    # Optionally list active incidents of this category
+    list_choice = validate_input("Show active incidents of this category? (y/n): ", validate_yes_no)
+    if list_choice.lower() in ('y','yes','y'):
+        result = db_manager.execute_query(
+            "SELECT id, incident_number, specific_incident, location, timestamp FROM incidents WHERE emergency_type = ? AND status = 'active' ORDER BY timestamp DESC",
+            (cat,)
+        )
+        if not result:
+            print("No active incidents for this category.")
+            return
+        print("\nActive incidents:")
+        for row in result:
+            row = dict(row)
+            print(f"  ID #{row['id']} - #{row['incident_number']} - {row['specific_incident']} - {row['location']} @ {row['timestamp']}")
+
+        # Allow responder to choose an incident to view/manage if the category matches their role
+        sel = validate_input("Enter incident ID to view/manage or press Enter to return: ", lambda x: x=='' or x.isdigit())
+        if sel == '':
+            return
+        incident_id = int(sel)
+        # Ensure responder is permitted (either their category matches or they are admin)
+        if responder_role != 'administrator' and responder_category != cat:
+            print("Access denied. You can only manage incidents in your assigned category.")
+            return
+        incident_rows = db_manager.execute_query("SELECT * FROM incidents WHERE id = ?", (incident_id,))
+        if not incident_rows:
+            print("Incident not found.")
+            return
+        display_incident_details(incident_id, responder_role, responder_category)
 
 #49-Responder Report Generation
 def generate_responder_report():
@@ -2218,19 +2337,16 @@ def log_multi_incident_report(incident_reports):
             main_specific = "multiple_incidents"
 
         # Create a consolidated incident record
-        incident_id = db_manager.execute_query(
-            """INSERT INTO incidents 
-            (incident_number, priority, emergency_type, specific_incident, location) 
-            VALUES (?, ?, ?, ?, ?)""",
-            (incident_number, "High", main_type, main_specific, incident_reports[0]['general_info']['location'])
-        )
+        # Insert a single consolidated incident record. If only one incident was reported
+        # we'll keep its type; for multiple incidents we'll use the "multi" marker.
+        consolidated_type = main_type if len(incident_reports) == 1 else "multi"
+        consolidated_specific = main_specific if len(incident_reports) == 1 else "multiple_incidents"
 
-        # Create a consolidated incident record
         incident_id = db_manager.execute_query(
             """INSERT INTO incidents 
             (incident_number, priority, emergency_type, specific_incident, location) 
             VALUES (?, ?, ?, ?, ?)""",
-            (incident_number, "High", "multi", "multiple_incidents", incident_reports[0]['general_info']['location'])
+            (incident_number, "High", consolidated_type, consolidated_specific, incident_reports[0]['general_info']['location'])
         )
         
         # Add general information
@@ -2371,7 +2487,6 @@ def show_advanced_menu():
         print("6. Responder Management Report")
         print("7. View Responder Actions")
         print("8. Return to Main Menu")
-
         choice = input("Enter your choice (1-8): ")
         if choice == '1': show_system_statistics()
         elif choice == '2': generate_daily_report()
@@ -2396,7 +2511,6 @@ def main():
             print("2. Reporter Mode")
             print("3. Advanced Options")
             print("4. Exit System")
-            
             choice = input("Enter your choice (1-4): ")
             if choice == '1': handle_receiver_mode()
             elif choice == '2': handle_reporter_mode()
