@@ -30,7 +30,8 @@ class Database:
                 responder_category TEXT,
                 status TEXT DEFAULT 'available',
                 active_incidents INTEGER DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
         
@@ -69,13 +70,28 @@ class Database:
         cursor.execute('''
             INSERT OR IGNORE INTO users (id, name, username, email, password, role, status, responder_category)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', ('resp001', 'John Responder', 'john_responder', 'responder@ers.com', 'Resp@123', 'responder', 'available', 'Medical'))
+        ''', ('resp001', 'John Responder', 'john_responder', 'responder@ers.com', 'Resp@123', 'responder', 'available', 'Fire'))
         
         cursor.execute('''
             INSERT OR IGNORE INTO users (id, name, username, email, password, role, status, responder_category)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', ('resp002', 'Sarah Medic', 'sarah_medic', 'medic@ers.com', 'Medic@123', 'responder', 'available', 'Fire'))
+        ''', ('resp002', 'Sarah Medic', 'sarah_medic', 'medic@ers.com', 'Medic@123', 'responder', 'available', 'Medical'))
         
+        # Create sample reporters
+        cursor.execute('''
+            INSERT OR IGNORE INTO users 
+            (id, name, username, email, password, role, status, phone, gender)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            'rept001', 'Alex Reporter', 'alex_reporter', 'alex@ers.com', 'Report@123', 'reporter', 'active', '01710000001', 'Male'))
+
+        cursor.execute('''
+            INSERT OR IGNORE INTO users 
+            (id, name, username, email, password, role, status, phone, gender)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            'rept002', 'Maya Citizen', 'maya_citizen', 'maya@ers.com', 'Citizen@123', 'reporter', 'active', '01710000002', 'Female'))
+
         conn.commit()
         conn.close()
     
@@ -86,8 +102,8 @@ class Database:
             INSERT INTO users (id, name, username, email, password, role, phone, gender, date_of_birth, responder_category, status)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (user.id, user.name, getattr(user, 'username', ''), user.email, user.password, user.role,
-              getattr(user, 'phone', ''), getattr(user, 'gender', ''), getattr(user, 'date_of_birth', ''),
-              getattr(user, 'responder_category', ''), user.status))
+            getattr(user, 'phone', ''), getattr(user, 'gender', ''), getattr(user, 'date_of_birth', ''),
+            getattr(user, 'responder_category', ''), user.status))
         conn.commit()
         conn.close()
     
@@ -157,14 +173,14 @@ class Database:
         cursor.execute('''
             INSERT INTO incidents 
             (id, type, location, description, severity, status, reporter_id, reporter_name, 
-             incident_category, specific_questions, emergency_feedback, assigned_responders,
-             created_at, updated_at)
+            incident_category, specific_questions, emergency_feedback, assigned_responders,
+            created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (incident.id, incident.type, incident.location, incident.description, 
-              incident.severity, incident.status, incident.reporter_id, 
-              incident.reporter_name, incident.incident_category,
-              json.dumps(incident.specific_questions), incident.emergency_feedback,
-              json.dumps(incident.assigned_responders), incident.created_at, incident.updated_at))
+            incident.severity, incident.status, incident.reporter_id, 
+            incident.reporter_name, incident.incident_category,
+            json.dumps(incident.specific_questions), incident.emergency_feedback,
+            json.dumps(incident.assigned_responders), incident.created_at, incident.updated_at))
         conn.commit()
         conn.close()
     
@@ -214,10 +230,10 @@ class Database:
             assigned_responders=?, updated_at=?
             WHERE id=?
         ''', (incident.type, incident.location, incident.description, incident.severity,
-              incident.status, incident.reporter_id, incident.reporter_name,
-              incident.responder_id, incident.responder_name, incident.incident_category,
-              json.dumps(incident.specific_questions), incident.emergency_feedback,
-              json.dumps(incident.assigned_responders), incident.updated_at, incident.id))
+            incident.status, incident.reporter_id, incident.reporter_name,
+            incident.responder_id, incident.responder_name, incident.incident_category,
+            json.dumps(incident.specific_questions), incident.emergency_feedback,
+            json.dumps(incident.assigned_responders), incident.updated_at, incident.id))
         conn.commit()
         conn.close()
     
@@ -230,8 +246,8 @@ class Database:
             date_of_birth=?, responder_category=?, status=?, active_incidents=?
             WHERE id=?
         ''', (user.name, user.username, user.email, user.password, user.role, 
-              user.phone, user.gender, user.date_of_birth, user.responder_category,
-              user.status, user.active_incidents, user.id))
+            user.phone, user.gender, user.date_of_birth, user.responder_category,
+            user.status, user.active_incidents, user.id))
         conn.commit()
         conn.close()
     
