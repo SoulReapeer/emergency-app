@@ -1,36 +1,44 @@
-from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QLineEdit, QPushButton, QMessageBox, QFormLayout,
-    QDialog, QFrame, QComboBox
-)
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QFont, QIcon
-import uuid
-import re
-import os
+#ayth_window.py
 
-from database import Database
-from models import User
-import styles
+
+from PyQt5.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel,        # UI elements and layouts
+    QLineEdit, QPushButton, QMessageBox, QFormLayout, # input fields, buttons, popups, forms
+    QDialog, QFrame, QComboBox                        # dialog window, frame, dropdowns
+)
+from PyQt5.QtCore import Qt, pyqtSignal               # core features (alignment, custom signals)
+from PyQt5.QtGui import QFont, QIcon                  # font styles and icons
+import uuid                                           # for generating unique user IDs
+import re                                             # for regex validation
+import os                                             # for file/system operations
+
+from database import Database                         # database interaction class
+from models import User                               # User model structure
+import styles                                         # custom stylesheet for UI
+
+import hashlib
+
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
 
 # Base directory for loading icons
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ICON_DIR = os.path.join(BASE_DIR, "icons")
 
-
+# ------------------------------------------------------------------ Password Validation
 def validate_password(password: str) -> bool:
-    """Validate that password is at least 8 chars, has upper+lower and a special char."""
-    if len(password) < 8:
+    """Validate that password is at least 8 chars, has upper+lower and a special char.""" 
+    if len(password) < 8: 
         return False
-    if not re.search(r"[A-Z]", password):
+    if not re.search(r"[A-Z]", password): 
         return False
-    if not re.search(r"[a-z]", password):
+    if not re.search(r"[a-z]", password): 
         return False
-    if not re.search(r"[^A-Za-z0-9]", password):
+    if not re.search(r"[^A-Za-z0-9]", password): 
         return False
-    return True
+    return True 
 
-
+# ---------------------------------------------------------------------- Auth Window
 class AuthWindow(QWidget):
     """Main login window."""
 
@@ -81,7 +89,7 @@ class AuthWindow(QWidget):
         username_label.setStyleSheet(
             """
             QLabel {
-                font-size: 14px;
+                font-size: 16px;
                 color: #2c3e50;
                 background: #ffffff;
                 border: 1px solid #dcdcdc;
@@ -91,6 +99,7 @@ class AuthWindow(QWidget):
             }
             """
         )
+        
         username_label.setFixedHeight(36)
 
         self.login_username = QLineEdit()
@@ -98,11 +107,12 @@ class AuthWindow(QWidget):
         self.login_username.setStyleSheet(
             """
             QLineEdit {
+                font-size: 16px;
                 background: #f4f6f7;
                 border: 1px solid #dcdcdc;
                 border-radius: 6px;
                 padding: 8px 12px;
-                min-height: 36px;
+                min-height: 40px;
             }
             QLineEdit:focus {
                 border: 1px solid #3498db;
@@ -124,7 +134,7 @@ class AuthWindow(QWidget):
         password_label.setStyleSheet(
             """
             QLabel {
-                font-size: 14px;
+                font-size: 16px;
                 color: #2c3e50;
                 background: #ffffff;
                 border: 1px solid #dcdcdc;
@@ -148,6 +158,7 @@ class AuthWindow(QWidget):
         self.login_password.setStyleSheet(
             """
             QLineEdit {
+                font-size: 16px;
                 background: #f4f6f7;
                 border: 1px solid #dcdcdc;
                 border-top-left-radius: 6px;
@@ -204,7 +215,7 @@ class AuthWindow(QWidget):
 
         create_btn = QPushButton("Create Account")
         create_btn.setStyleSheet(styles.STYLES["button_style"])
-        create_btn.clicked.connect(self.open_create_account_dialog)
+        create_btn.clicked.connect(self.open_create_account_window)
         btn_layout.addWidget(create_btn)
 
         forgot_btn = QPushButton("Forgot Password?")
@@ -239,18 +250,19 @@ class AuthWindow(QWidget):
             return
 
         user = self.db.get_user_by_username(username)
-        if not user or user.password != password:
+        if not user or user.password != hash_password(password):
             QMessageBox.warning(self, "Error", "Invalid username or password.")
             return
+
 
         # success
         self.login_success.emit(user)
         self.close()
 
-    def open_create_account_dialog(self):
-        dialog = CreateAccountDialog(self.db, self)
-        if dialog.exec_() == QDialog.Accepted:
-            QMessageBox.information(self, "Success", "Account created successfully.")
+    def open_create_account_window(self):
+        self.create_window = CreateAccountWindow(self.db)
+        self.create_window.show()
+
 
     def open_password_recovery_dialog(self):
         dialog = PasswordRecoveryDialog(self.db, self)
@@ -258,7 +270,7 @@ class AuthWindow(QWidget):
 
 
 # ---------------------------------------------------------------------- Create Account
-class CreateAccountDialog(QDialog):
+class CreateAccountWindow(QWidget):
     def __init__(self, db: Database, parent=None):
         super().__init__(parent)
         self.db = db
@@ -266,7 +278,9 @@ class CreateAccountDialog(QDialog):
 
     def init_ui(self):
         self.setWindowTitle("Create Account")
-        self.setFixedSize(450, 550)
+        self.resize(700, 650)
+        self.setMinimumSize(650, 600)
+        
 
         layout = QFormLayout()
         layout.setSpacing(15)
@@ -332,7 +346,7 @@ class CreateAccountDialog(QDialog):
 
         cancel_btn = QPushButton("Cancel")
         cancel_btn.setStyleSheet(styles.STYLES["danger_button_style"])
-        cancel_btn.clicked.connect(self.reject)
+        cancel_btn.clicked.connect(self.close)
 
         btn_layout.addWidget(create_btn)
         btn_layout.addWidget(cancel_btn)
@@ -346,9 +360,11 @@ class CreateAccountDialog(QDialog):
     def on_role_changed(self, role_text: str):
         """Only enable responder category if role is Responder."""
         is_responder = role_text.lower() == "responder"
-        self.responder_category_input.setEnabled(is_responder)
+        self.responder_category_input.setVisible(is_responder)
 
     def handle_create(self):
+        
+
         name = self.name_input.text().strip()
         username = self.username_input.text().strip()
         password = self.password_input.text().strip()
@@ -357,7 +373,20 @@ class CreateAccountDialog(QDialog):
         gender = self.gender_combo.currentText()
         email = self.email_input.text().strip()
         phone = self.phone_input.text().strip()
-        role = self.role_combo.currentText().lower()  # "reporter" or "responder"
+        email_pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+        if not re.match(email_pattern, email):
+            QMessageBox.warning(self, "Error", "Invalid email format.")
+            return
+        if not phone.isdigit():
+            QMessageBox.warning(self, "Error", "Phone number must contain only digits.")
+            return
+        ROLE_MAP = {
+            "Reporter": "reporter",
+            "Responder": "responder"
+        }
+
+        role = ROLE_MAP[self.role_combo.currentText()] # "reporter" or "responder"
+        
         responder_category = (
             self.responder_category_input.text().strip() if role == "responder" else ""
         )
@@ -393,7 +422,7 @@ class CreateAccountDialog(QDialog):
             id=str(uuid.uuid4()),
             name=name,
             email=email,
-            password=password,
+            password=hash_password(password),
             role=role,
             username=username,
             phone=phone,
@@ -404,7 +433,7 @@ class CreateAccountDialog(QDialog):
 
         self.db.create_user(user)
         QMessageBox.information(self, "Success", "Account created successfully.")
-        self.accept()
+        self.close()
 
 
 # ---------------------------------------------------------------------- Password Recovery
@@ -444,6 +473,7 @@ class PasswordRecoveryDialog(QDialog):
         layout.addRow(btn_layout)
         self.setLayout(layout)
 
+    
     def handle_recover(self):
         email = self.email_input.text().strip()
         phone = self.phone_input.text().strip()
@@ -456,9 +486,10 @@ class PasswordRecoveryDialog(QDialog):
         if user:
             QMessageBox.information(
                 self,
-                "Password Found",
-                f"Your password is: {user.password}",
+                "Recovery Successful",
+                "Your identity was verified.\nPlease contact admin to reset your password."
             )
             self.accept()
+
         else:
             QMessageBox.warning(self, "Not Found", "No user found with that email and phone.")
