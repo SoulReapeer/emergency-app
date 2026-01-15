@@ -1,3 +1,5 @@
+#database.py
+import hashlib
 import sqlite3
 import json
 from datetime import datetime
@@ -63,19 +65,19 @@ class Database:
         cursor.execute('''
             INSERT OR IGNORE INTO users (id, name, username, email, password, role, status)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', ('admin001', 'System Admin', 'Admin', 'admin@ers.com', 'Admin@123', 'admin', 'available'))
+        ''', ('admin001', 'System Admin', 'Admin', 'admin@ers.com', hashlib.sha256("Admin@123".encode()).hexdigest(), 'admin', 'available'))
 
         
         # Create sample responders
         cursor.execute('''
             INSERT OR IGNORE INTO users (id, name, username, email, password, role, status, responder_category)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', ('resp001', 'John Responder', 'john_responder', 'responder@ers.com', 'Resp@123', 'responder', 'available', 'Fire'))
+        ''', ('resp001', 'John Responder', 'john_responder', 'responder@ers.com', hashlib.sha256("Resp@123".encode()).hexdigest(), 'responder', 'available', 'Fire'))
         
         cursor.execute('''
             INSERT OR IGNORE INTO users (id, name, username, email, password, role, status, responder_category)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', ('resp002', 'Sarah Medic', 'sarah_medic', 'medic@ers.com', 'Medic@123', 'responder', 'available', 'Medical'))
+        ''', ('resp002', 'Sarah Medic', 'sarah_medic', 'medic@ers.com', hashlib.sha256("Medic@123".encode()).hexdigest(), 'responder', 'available', 'Medical'))
         
         # Create sample reporters
         cursor.execute('''
@@ -83,14 +85,14 @@ class Database:
             (id, name, username, email, password, role, status, phone, gender)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            'rept001', 'Alex Reporter', 'alex_reporter', 'alex@ers.com', 'Report@123', 'reporter', 'active', '01710000001', 'Male'))
+            'rept001', 'Alex Reporter', 'alex_reporter', 'alex@ers.com', hashlib.sha256("Report@123".encode()).hexdigest(), 'reporter', 'active', '01710000001', 'Male'))
 
         cursor.execute('''
             INSERT OR IGNORE INTO users 
             (id, name, username, email, password, role, status, phone, gender)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            'rept002', 'Maya Citizen', 'maya_citizen', 'maya@ers.com', 'Citizen@123', 'reporter', 'active', '01710000002', 'Female'))
+            'rept002', 'Maya Citizen', 'maya_citizen', 'maya@ers.com', hashlib.sha256("Citizen@123".encode()).hexdigest(), 'reporter', 'active', '01710000002', 'Female'))
 
         conn.commit()
         conn.close()
