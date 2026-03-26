@@ -783,22 +783,114 @@ class Profile(QWidget):
     # Helper widget logic
     # --------------------
     def _add_backup_phone_field(self, value: str = ""):
+        # Create a horizontal layout for the field and remove button
+        field_layout = QHBoxLayout()
+        
         field = QLineEdit(value)
         field.setPlaceholderText("Backup phone number")
         field.setStyleSheet(
             "padding: 8px; border: 1px solid #D1D5DB; border-radius: 6px;"
         )
+        
+        remove_btn = QPushButton("Remove")
+        remove_btn.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #EF4444;
+                color: white;
+                border: none;
+                padding: 6px 12px;
+                border-radius: 6px;
+                font-size: 12px;
+                margin-left: 10px;
+            }
+            QPushButton:hover {
+                background-color: #DC2626;
+            }
+            """
+        )
+        remove_btn.clicked.connect(lambda: self._remove_backup_phone_field(field_layout))
+        
+        field_layout.addWidget(field)
+        field_layout.addWidget(remove_btn)
+        field_layout.addStretch()  # Push remove button to the right
+        
         self.backup_phone_inputs.append(field)
-        self.backup_phone_layout.addWidget(field)
+        self.backup_phone_layout.addLayout(field_layout)
+
+    def _remove_backup_phone_field(self, field_layout):
+        # Find the QLineEdit in the layout
+        for i in range(field_layout.count()):
+            widget = field_layout.itemAt(i).widget()
+            if isinstance(widget, QLineEdit):
+                self.backup_phone_inputs.remove(widget)
+                break
+        # Remove the layout from the parent layout
+        for i in range(self.backup_phone_layout.count()):
+            item = self.backup_phone_layout.itemAt(i)
+            if item.layout() == field_layout:
+                # Remove all widgets from the layout
+                while field_layout.count():
+                    child = field_layout.takeAt(0)
+                    if child.widget():
+                        child.widget().deleteLater()
+                self.backup_phone_layout.removeItem(item)
+                break
 
     def _add_backup_address_field(self, value: str = ""):
+        # Create a horizontal layout for the field and remove button
+        field_layout = QHBoxLayout()
+        
         field = QLineEdit(value)
         field.setPlaceholderText("Backup address")
         field.setStyleSheet(
             "padding: 8px; border: 1px solid #D1D5DB; border-radius: 6px;"
         )
+        
+        remove_btn = QPushButton("Remove")
+        remove_btn.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #EF4444;
+                color: white;
+                border: none;
+                padding: 6px 12px;
+                border-radius: 6px;
+                font-size: 12px;
+                margin-left: 10px;
+            }
+            QPushButton:hover {
+                background-color: #DC2626;
+            }
+            """
+        )
+        remove_btn.clicked.connect(lambda: self._remove_backup_address_field(field_layout))
+        
+        field_layout.addWidget(field)
+        field_layout.addWidget(remove_btn)
+        field_layout.addStretch()  # Push remove button to the right
+        
         self.backup_address_inputs.append(field)
-        self.backup_address_layout.addWidget(field)
+        self.backup_address_layout.addLayout(field_layout)
+
+    def _remove_backup_address_field(self, field_layout):
+        # Find the QLineEdit in the layout
+        for i in range(field_layout.count()):
+            widget = field_layout.itemAt(i).widget()
+            if isinstance(widget, QLineEdit):
+                self.backup_address_inputs.remove(widget)
+                break
+        # Remove the layout from the parent layout
+        for i in range(self.backup_address_layout.count()):
+            item = self.backup_address_layout.itemAt(i)
+            if item.layout() == field_layout:
+                # Remove all widgets from the layout
+                while field_layout.count():
+                    child = field_layout.takeAt(0)
+                    if child.widget():
+                        child.widget().deleteLater()
+                self.backup_address_layout.removeItem(item)
+                break
 
     def _on_category_changed(self):
         if not self.category_combo or not self.role_combo:
@@ -820,11 +912,32 @@ class Profile(QWidget):
         self.username_input.setText(self.current_user.username)
 
         # Reset backup lists
-        for w in self.backup_phone_inputs:
-            w.deleteLater()
-        for w in self.backup_address_inputs:
-            w.deleteLater()
+        # Clear all layouts in backup_phone_layout
+        while self.backup_phone_layout.count():
+            item = self.backup_phone_layout.takeAt(0)
+            if item.layout():
+                # Remove all widgets from the sub-layout
+                sub_layout = item.layout()
+                while sub_layout.count():
+                    child = sub_layout.takeAt(0)
+                    if child.widget():
+                        child.widget().deleteLater()
+            elif item.widget():
+                item.widget().deleteLater()
         self.backup_phone_inputs.clear()
+        
+        # Clear all layouts in backup_address_layout
+        while self.backup_address_layout.count():
+            item = self.backup_address_layout.takeAt(0)
+            if item.layout():
+                # Remove all widgets from the sub-layout
+                sub_layout = item.layout()
+                while sub_layout.count():
+                    child = sub_layout.takeAt(0)
+                    if child.widget():
+                        child.widget().deleteLater()
+            elif item.widget():
+                item.widget().deleteLater()
         self.backup_address_inputs.clear()
 
         for num in self.profile_data.get("backup_numbers") or [""]:
