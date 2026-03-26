@@ -1,4 +1,4 @@
-#ayth_window.py
+#auth_window.py
 
 
 from PyQt5.QtWidgets import (
@@ -211,7 +211,12 @@ class AuthWindow(QWidget):
         login_btn = QPushButton("Login")
         login_btn.setStyleSheet(styles.STYLES["button_style"])
         login_btn.clicked.connect(self.handle_login)
+        login_btn.setDefault(True)
+        login_btn.setAutoDefault(True)
         btn_layout.addWidget(login_btn)
+
+        self.login_username.returnPressed.connect(self.handle_login)
+        self.login_password.returnPressed.connect(self.handle_login)
 
         create_btn = QPushButton("Create Account")
         create_btn.setStyleSheet(styles.STYLES["button_style"])
