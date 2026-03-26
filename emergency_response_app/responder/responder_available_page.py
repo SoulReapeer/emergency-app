@@ -49,11 +49,11 @@ class ResponderAvailablePage(QWidget):
         self.setLayout(layout)
 
     def _category_matches(self, incident_cat: str) -> bool:
-        if not self.user.responder_category:
-            return True  # no specialization -> see all
-        user_cat = self.user.responder_category.lower().replace(" ", "_")
-        inc_cat = (incident_cat or "").lower().replace(" ", "_")
-        return user_cat == inc_cat
+            if not self.user.responder_category:
+                return True  # no specialization -> see all
+            user_cat = self.user.responder_category.lower().strip().replace(" ", "_")
+            inc_cat = (incident_cat or "").lower().strip().replace(" ", "_")
+            return user_cat == inc_cat
 
     def load_data(self):
         all_incidents = self.db.get_all_incidents()
