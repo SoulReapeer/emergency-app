@@ -106,13 +106,24 @@ class ResponderDashboard(QWidget):
         card.setLayout(layout)
 
         return card
-    
+#-----------------working down--------------    
     def load_data(self):
         # Get all pending incidents
         all_incidents = self.db.get_all_incidents()
-        pending_incidents = [i for i in all_incidents if i.status == 'pending']
+        user_cat = (self.user.responder_category or "").lower().strip().replace(" ", "_")
+        if user_cat:
+            pending_incidents = [
+                i for i in all_incidents
+                if i.status == 'pending'
+                and (i.incident_category or "").lower().strip().replace(" ", "_") == user_cat
+            ]
+        else:
+            pending_incidents = [i for i in all_incidents if i.status == 'pending']
         my_assignments = self.db.get_incidents_by_responder(self.user.id)
         
+        # Update stats
+        self.total_assignments_card.layout().itemAt(0).widget().setText(str(len(my_assignments)))
+#-----------------working up--------------        
         # Update stats
         self.total_assignments_card.layout().itemAt(0).widget().setText(str(len(my_assignments)))
         self.active_incidents_card.layout().itemAt(0).widget().setText(str(len([i for i in my_assignments if i.status == 'ongoing'])))
