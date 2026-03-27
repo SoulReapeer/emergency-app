@@ -100,7 +100,8 @@ class ReporterNewIncidentPage(QWidget):
         # ---- Dynamic questions ----
         self.questions_group = QGroupBox("Additional Information")
         self.questions_group.setFont(QFont("Arial", 14, QFont.Bold))
-        self.questions_layout = QFormLayout()
+        self.questions_layout = QVBoxLayout()
+        self.questions_layout.setSpacing(16)
         self.questions_group.setLayout(self.questions_layout)
         scroll_layout.addWidget(self.questions_group)
 
@@ -166,8 +167,9 @@ class ReporterNewIncidentPage(QWidget):
 
         while self.questions_layout.count():
             item = self.questions_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            w = item.widget()
+            if w is not None:
+                w.deleteLater()
 
         incident_type = self.type_combo.currentData()
         if not incident_type:
@@ -182,20 +184,59 @@ class ReporterNewIncidentPage(QWidget):
         for key, question in questions.items():
             if key in ["location", "incident_description"]:
                 continue
+
+            # Container for one question block
+            field_block = QWidget()
+            field_block.setStyleSheet("background: transparent;")
+            block_layout = QVBoxLayout(field_block)
+            block_layout.setContentsMargins(0, 0, 0, 0)
+            block_layout.setSpacing(6)
+
+            # Question label
+            question_label = QLabel(question)
+            question_label.setFont(QFont("Arial", 12, QFont.Bold))
+            question_label.setWordWrap(True)
+            question_label.setStyleSheet("color: #1F2937;")
+            block_layout.addWidget(question_label)
+
+            # Answer input below the label
             if "yes/no" in question.lower() or question.lower().endswith("(yes/no)"):
                 widget = QComboBox()
                 widget.addItems(["", "Yes", "No"])
-                widget.setFont(QFont("Arial", 12))  # Medium font
+                widget.setFont(QFont("Arial", 12))
+                widget.setMinimumHeight(38)
+                widget.setStyleSheet("""
+                    QComboBox {
+                        border: 1px solid #D1D5DB;
+                        border-radius: 6px;
+                        padding: 6px 12px;
+                        background: white;
+                        color: #1F2937;
+                    }
+                    QComboBox:focus {
+                        border: 2px solid #3498db;
+                    }
+                """)
             else:
                 widget = QLineEdit()
-                widget.setPlaceholderText(key.replace("_", " ").title())
-                widget.setFont(QFont("Arial", 12))  # Medium font
-                widget.setMinimumHeight(35)  # Taller input
+                widget.setPlaceholderText(f"Your answer...")
+                widget.setFont(QFont("Arial", 12))
+                widget.setMinimumHeight(38)
+                widget.setStyleSheet("""
+                    QLineEdit {
+                        border: 1px solid #D1D5DB;
+                        border-radius: 6px;
+                        padding: 6px 12px;
+                        background: white;
+                        color: #1F2937;
+                    }
+                    QLineEdit:focus {
+                        border: 2px solid #3498db;
+                    }
+                """)
 
-            question_label = QLabel(question)
-            question_label.setFont(QFont("Arial", 12))  # Set font for question label
-            question_label.setWordWrap(True)  # Allow wrapping for long questions
-            self.questions_layout.addRow(question_label, widget)
+            block_layout.addWidget(widget)
+            self.questions_layout.addWidget(field_block)
             self.dynamic_widgets[key] = widget
 
         feedback = get_feedback_for_incident(incident_type)
