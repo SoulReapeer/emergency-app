@@ -47,9 +47,10 @@ class ResponderDashboard(QWidget):
         # Refresh button
         refresh_btn = QPushButton('Refresh')
         refresh_btn.setStyleSheet(styles.STYLES['button_style'])
-        refresh_btn.setFixedWidth(120)       # 🔹 Button width fixed
-        refresh_btn.setFixedHeight(36)       # 🔹 Height fixed
+        refresh_btn.setFixedWidth(120)
+        refresh_btn.setFixedHeight(36)
         refresh_btn.setCursor(Qt.PointingHandCursor)
+        refresh_btn.clicked.connect(self.load_data)
 
         # 🔹 Left-align the button
         refresh_btn_layout = QHBoxLayout()
@@ -121,9 +122,6 @@ class ResponderDashboard(QWidget):
             pending_incidents = [i for i in all_incidents if i.status == 'pending']
         my_assignments = self.db.get_incidents_by_responder(self.user.id)
         
-        # Update stats
-        self.total_assignments_card.layout().itemAt(0).widget().setText(str(len(my_assignments)))
-#-----------------working up--------------        
         # Update stats
         self.total_assignments_card.layout().itemAt(0).widget().setText(str(len(my_assignments)))
         self.active_incidents_card.layout().itemAt(0).widget().setText(str(len([i for i in my_assignments if i.status == 'ongoing'])))
@@ -214,7 +212,7 @@ class ResponderDashboard(QWidget):
         incident.status = 'solved'
         incident.updated_at = datetime.now()
         
-        self.user.active_incidents -= 1
+        self.user.active_incidents = max(0, self.user.active_incidents - 1)
         if self.user.active_incidents == 0:
             self.user.status = 'available'
         
