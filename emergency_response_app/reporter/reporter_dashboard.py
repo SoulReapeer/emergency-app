@@ -200,6 +200,7 @@ class NewIncidentDialog(QDialog):
         
         # Incident Type
         self.type_combo = QComboBox()
+        self.type_combo.currentIndexChanged.connect(self.on_incident_type_changed)
         category_layout.addRow('Incident Type:', self.type_combo)
         
         # Priority
@@ -273,6 +274,7 @@ class NewIncidentDialog(QDialog):
     
     def on_category_changed(self, category):
         category_lower = category.lower()
+        self.type_combo.blockSignals(True)
         self.type_combo.clear()
         
         if category_lower in incident_categories:
@@ -281,7 +283,7 @@ class NewIncidentDialog(QDialog):
                 display_name = get_incident_display_name(incident_type)
                 self.type_combo.addItem(display_name, incident_type)
         
-        self.type_combo.currentIndexChanged.connect(self.on_incident_type_changed)
+        self.type_combo.blockSignals(False)
         self.on_incident_type_changed()
     
     def on_incident_type_changed(self):
