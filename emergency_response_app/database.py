@@ -264,10 +264,16 @@ class Database:
     def get_next_incident_id(self):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT COUNT(*) FROM incidents')
-        count = cursor.fetchone()[0]
+        cursor.execute("SELECT id FROM incidents WHERE id LIKE 'INC-%' ORDER BY id DESC LIMIT 1")
+        row = cursor.fetchone()
         conn.close()
-        return f"INC-{count + 1:03d}"
+        if row:
+            try:
+                last_num = int(row[0].split('-')[1])
+                return f"INC-{last_num + 1:03d}"
+            except (IndexError, ValueError):
+                pass
+        return "INC-001"
     
     def get_next_user_id(self, role):
         conn = self.get_connection()
@@ -286,12 +292,12 @@ class Database:
             email=row[3],
             password=row[4],
             role=row[5],
-            phone=row[6],
-            gender=row[7],
-            date_of_birth=row[8],
-            responder_category=row[9],
-            status=row[10],
-            active_incidents=row[11],
+            phone=row[6] or "",
+            gender=row[7] or "",
+            date_of_birth=row[8] or "",
+            responder_category=row[9] or "",
+            status=row[10] or "available",
+            active_incidents=row[11] if row[11] is not None else 0,
             created_at=datetime.fromisoformat(row[12]) if isinstance(row[12], str) else row[12]
         )
     
