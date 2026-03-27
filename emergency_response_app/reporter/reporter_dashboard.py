@@ -76,29 +76,32 @@ class ReporterDashboard(QWidget):
         layout.addWidget(self.incidents_table)
         
         self.setLayout(layout)
-    
+
     def create_stat_card(self, title, value, style=""):
         card = QFrame()
         card.setStyleSheet(styles.STYLES['card_style'])
-        card.setFixedHeight(80)
-        
+
+        card.setMinimumHeight(110)
+        card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
         layout = QVBoxLayout()
-        
+        layout.setContentsMargins(16, 12, 16, 12)
+
         value_label = QLabel(value)
-        value_label.setFont(QFont('Arial', 20, QFont.Bold))
+        value_label.setFont(QFont('Arial', 22, QFont.Bold))
         value_label.setStyleSheet(style)
         value_label.setAlignment(Qt.AlignCenter)
-        
+
         title_label = QLabel(title)
         title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet("color: #7f8c8d;")
-        
+        title_label.setStyleSheet("color: #7f8c8d; font-size: 12px;")
+
         layout.addWidget(value_label)
         layout.addWidget(title_label)
         card.setLayout(layout)
-        
+
         return card
-    
+
     def load_data(self):
         incidents = self.db.get_incidents_by_reporter(self.user.id)
         
