@@ -1,6 +1,5 @@
 #auth_window.py
 
-
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,        # UI elements and layouts
     QLineEdit, QPushButton, QMessageBox, QFormLayout, # input fields, buttons, popups, forms
@@ -378,26 +377,27 @@ class CreateAccountWindow(QWidget):
         gender = self.gender_combo.currentText()
         email = self.email_input.text().strip()
         phone = self.phone_input.text().strip()
-        email_pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
-        if not re.match(email_pattern, email):
-            QMessageBox.warning(self, "Error", "Invalid email format.")
-            return
-        if not phone.isdigit():
-            QMessageBox.warning(self, "Error", "Phone number must contain only digits.")
-            return
         ROLE_MAP = {
             "Reporter": "reporter",
             "Responder": "responder"
         }
 
-        role = ROLE_MAP[self.role_combo.currentText()] # "reporter" or "responder"
-        
+        role = ROLE_MAP[self.role_combo.currentText()]
+
         responder_category = (
             self.responder_category_input.text().strip() if role == "responder" else ""
         )
 
         if not (name and username and password and email and phone and role):
             QMessageBox.warning(self, "Error", "Please fill in all required fields.")
+            return
+
+        email_pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+        if not re.match(email_pattern, email):
+            QMessageBox.warning(self, "Error", "Invalid email format.")
+            return
+        if not phone.isdigit():
+            QMessageBox.warning(self, "Error", "Phone number must contain only digits.")
             return
 
         # Password validation
