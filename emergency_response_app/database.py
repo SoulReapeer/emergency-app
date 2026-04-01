@@ -54,12 +54,19 @@ class Database:
                 specific_questions TEXT,
                 emergency_feedback TEXT,
                 assigned_responders TEXT,
+                attachments TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (reporter_id) REFERENCES users (id),
                 FOREIGN KEY (responder_id) REFERENCES users (id)
             )
         ''')
+
+        # Add attachments column to existing databases that don't have it yet
+        try:
+            cursor.execute("ALTER TABLE incidents ADD COLUMN attachments TEXT")
+        except Exception:
+            pass  # Column already exists, skip
         
         # Create default admin user
         cursor.execute('''
@@ -176,13 +183,15 @@ class Database:
             INSERT INTO incidents 
             (id, type, location, description, priority, status, reporter_id, reporter_name, 
             incident_category, specific_questions, emergency_feedback, assigned_responders,
-            created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            attachments, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (incident.id, incident.type, incident.location, incident.description, 
             incident.priority, incident.status, incident.reporter_id, 
             incident.reporter_name, incident.incident_category,
             json.dumps(incident.specific_questions), incident.emergency_feedback,
-            json.dumps(incident.assigned_responders), incident.created_at, incident.updated_at))
+            json.dumps(incident.assigned_responders),
+            json.dumps(getattr(incident, 'attachments', [])),
+            incident.created_at, incident.updated_at))
         conn.commit()
         conn.close()
     
@@ -317,8 +326,9 @@ class Database:
             specific_questions=json.loads(row[11]) if row[11] else {},
             emergency_feedback=row[12],
             assigned_responders=json.loads(row[13]) if row[13] else [],
-            created_at=datetime.fromisoformat(row[14]) if isinstance(row[14], str) else row[14],
-            updated_at=datetime.fromisoformat(row[15]) if isinstance(row[15], str) else row[15]
+            attachments=json.loads(row[14]) if row[14] else [],
+            created_at=datetime.fromisoformat(row[15]) if isinstance(row[15], str) else row[15],
+            updated_at=datetime.fromisoformat(row[16]) if isinstance(row[16], str) else row[16]
         )
 
     def assign_responder(self, incident_id, responder_id, responder_name):
