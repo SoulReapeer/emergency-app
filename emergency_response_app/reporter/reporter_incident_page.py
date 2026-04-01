@@ -2,10 +2,11 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QGroupBox,
     QLabel, QLineEdit, QTextEdit, QComboBox, QPushButton,
-    QScrollArea, QMessageBox
+    QScrollArea, QMessageBox, QFileDialog, QFrame
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
+import os
 from datetime import datetime
 
 from models import Incident
@@ -104,6 +105,47 @@ class ReporterNewIncidentPage(QWidget):
         self.questions_layout.setSpacing(16)
         self.questions_group.setLayout(self.questions_layout)
         scroll_layout.addWidget(self.questions_group)
+
+        # ---- Attachments ----
+        attachments_group = QGroupBox("Attachments  (optional)")
+        attachments_group.setFont(QFont("Arial", 14, QFont.Bold))
+        attachments_layout = QVBoxLayout()
+        attachments_layout.setSpacing(10)
+
+        attach_hint = QLabel("You can attach images, videos, PDFs or other files to support your report.")
+        attach_hint.setStyleSheet("color: #6B7280; font-size: 11px;")
+        attach_hint.setWordWrap(True)
+        attachments_layout.addWidget(attach_hint)
+
+        attach_btn = QPushButton("＋  Add Files")
+        attach_btn.setStyleSheet("""
+            QPushButton {
+                background-color: white;
+                color: #3498db;
+                border: 2px dashed #3498db;
+                border-radius: 8px;
+                padding: 10px 20px;
+                font-size: 13px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #EBF5FB;
+            }
+        """)
+        attach_btn.setMinimumHeight(44)
+        attach_btn.clicked.connect(self.browse_attachments)
+        attachments_layout.addWidget(attach_btn)
+
+        # List area that shows chosen files
+        self.attachments_list_layout = QVBoxLayout()
+        self.attachments_list_layout.setSpacing(6)
+        attachments_layout.addLayout(self.attachments_list_layout)
+
+        attachments_group.setLayout(attachments_layout)
+        scroll_layout.addWidget(attachments_group)
+
+        # Internal list of selected file paths
+        self.selected_files = []
 
         # ---- Emergency instructions ----
         self.feedback_group = QGroupBox("Emergency Instructions")
@@ -252,11 +294,93 @@ class ReporterNewIncidentPage(QWidget):
                 data[key] = widget.text()
         return data
 
+    def browse_attachments(self):
+        files, _ = QFileDialog.getOpenFileNames(
+            self,
+            "Select Files",
+            "",
+            "All Supported Files (*.png *.jpg *.jpeg *.gif *.bmp *.mp4 *.avi *.mov *.mkv *.pdf *.doc *.docx *.txt *.zip);;"
+            "Images (*.png *.jpg *.jpeg *.gif *.bmp);;"
+            "Videos (*.mp4 *.avi *.mov *.mkv);;"
+            "Documents (*.pdf *.doc *.docx *.txt *.zip)"
+        )
+        for path in files:
+            if path not in self.selected_files:
+                self.selected_files.append(path)
+                self._add_file_chip(path)
+
+    def _add_file_chip(self, path):
+        """Add a small row showing the filename with a remove button."""
+        filename = os.path.basename(path)
+        ext = os.path.splitext(filename)[1].lower()
+
+        # Pick an icon based on file type
+        if ext in (".png", ".jpg", ".jpeg", ".gif", ".bmp"):
+            icon = "🖼️"
+        elif ext in (".mp4", ".avi", ".mov", ".mkv"):
+            icon = "🎥"
+        elif ext == ".pdf":
+            icon = "📄"
+        else:
+            icon = "📎"
+
+        chip = QFrame()
+        chip.setStyleSheet("""
+            QFrame {
+                background-color: #F3F4F6;
+                border: 1px solid #E5E7EB;
+                border-radius: 6px;
+            }
+        """)
+        chip_layout = QHBoxLayout(chip)
+        chip_layout.setContentsMargins(10, 6, 10, 6)
+        chip_layout.setSpacing(8)
+
+        icon_label = QLabel(icon)
+        icon_label.setFixedWidth(20)
+        chip_layout.addWidget(icon_label)
+
+        name_label = QLabel(filename)
+        name_label.setStyleSheet("color: #1F2937; font-size: 12px; background: transparent; border: none;")
+        name_label.setToolTip(path)
+        chip_layout.addWidget(name_label, 1)
+
+        remove_btn = QPushButton("✕")
+        remove_btn.setFixedSize(22, 22)
+        remove_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                color: #9CA3AF;
+                border: none;
+                font-size: 13px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                color: #e74c3c;
+            }
+        """)
+        remove_btn.clicked.connect(lambda _, p=path, c=chip: self._remove_file(p, c))
+        chip_layout.addWidget(remove_btn)
+
+        self.attachments_list_layout.addWidget(chip)
+
+    def _remove_file(self, path, chip_widget):
+        """Remove a file from the selected list and from the UI."""
+        if path in self.selected_files:
+            self.selected_files.remove(path)
+        chip_widget.deleteLater()
+
     def reset_form(self):
         self.location_input.clear()
         self.description_input.clear()
         self.category_combo.setCurrentIndex(0)
         self.priority_label.setText("")
+        self.selected_files.clear()
+        # Remove all file chips from UI
+        while self.attachments_list_layout.count():
+            item = self.attachments_list_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
         self.on_category_changed(self.category_combo.currentText())
 
     def submit_incident(self):
@@ -296,6 +420,7 @@ class ReporterNewIncidentPage(QWidget):
                 specific_questions=specific_questions,
                 emergency_feedback=get_feedback_for_incident(incident_type),
                 assigned_responders=get_responders_for_incident(incident_type),
+                attachments=self.selected_files.copy(),
                 created_at=datetime.now(),
                 updated_at=datetime.now(),
             )
