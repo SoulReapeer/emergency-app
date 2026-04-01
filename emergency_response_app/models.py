@@ -40,7 +40,7 @@ class Incident:
     def __init__(self, id, type, location, description, priority, status="pending", 
                  reporter_id=None, reporter_name=None, responder_id=None, responder_name=None,
                  created_at=None, updated_at=None, incident_category=None, specific_questions=None,
-                 emergency_feedback=None, assigned_responders=None):
+                 emergency_feedback=None, assigned_responders=None, attachments=None):
         self.id = id
         self.type = type
         self.location = location
@@ -57,6 +57,7 @@ class Incident:
         self.specific_questions = specific_questions or {}
         self.emergency_feedback = emergency_feedback or ""
         self.assigned_responders = assigned_responders or []
+        self.attachments = attachments or []
     
     def to_dict(self):
         return {
