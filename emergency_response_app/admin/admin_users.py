@@ -1,4 +1,5 @@
 # admin/admin_users.py
+
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QFrame, QScrollArea, QLineEdit,
@@ -256,6 +257,24 @@ class AdminUsers(QWidget):
         toggle_btn.clicked.connect(lambda _, u=user: self.toggle_user_status(u))
         actions_layout.addWidget(toggle_btn)
 
+        dossier_btn = QPushButton("View Dossier →")
+        dossier_btn.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #2c3e50;
+                color: white;
+                border: none;
+                padding: 6px 14px;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: bold;
+            }
+            QPushButton:hover { background-color: #34495e; }
+            """
+        )
+        dossier_btn.clicked.connect(lambda _, u=user: self.open_dossier(u))
+        actions_layout.addWidget(dossier_btn)
+
         # Placeholder for future actions
         # reset_btn = QPushButton("Reset Password")
         # reset_btn.setStyleSheet(styles.STYLES["danger_button_style"])
@@ -291,9 +310,14 @@ class AdminUsers(QWidget):
         # Reload data to refresh cards
         self.load_users()
 
-    # You can add more admin actions here later, e.g.:
-    #
-    # def reset_password(self, user):
-    #     ...
-    #     self.db.update_user(user)
-    #     QMessageBox.information(self, "Success", "Password reset.")
+    def open_dossier(self, user):
+        """Navigate to the UserDossier page for this user via MainWindow."""
+        main_win = self.window()
+        if hasattr(main_win, "open_user_dossier"):
+            main_win.open_user_dossier(user)
+
+    def show_user_list(self):
+        """Called by UserDossier when the user clicks Back."""
+        main_win = self.window()
+        if hasattr(main_win, "handle_navigation_by_view"):
+            main_win.handle_navigation_by_view("users")
