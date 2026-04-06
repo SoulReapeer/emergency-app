@@ -264,520 +264,380 @@ class Profile(QWidget):
     # UI Building
     # -------------
     def init_ui(self):
-        # Top-level layout for this widget
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
-        # Scroll area so the whole profile page can scroll vertically
+        # Scroll area — fills all available space and shrinks with the window
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         scroll_area.setFrameShape(QFrame.NoFrame)
+        scroll_area.setSizePolicy(
+            scroll_area.sizePolicy().horizontalPolicy(),
+            scroll_area.sizePolicy().verticalPolicy()
+        )
 
-        # Container widget that will actually hold your existing profile layout
         container = QWidget()
+        container.setMinimumWidth(400)   # never clip below 400 px wide
         layout = QVBoxLayout(container)
-        layout.setSpacing(25)
-        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(20)
+        layout.setContentsMargins(30, 24, 30, 30)
 
-
-        # Header
-        header_layout = QHBoxLayout()
+        # ── Page title ──────────────────────────────────────────
         title = QLabel("My Profile")
-        title.setFont(QFont("Arial", 20, QFont.Bold))
+        title.setFont(QFont("Arial", 18, QFont.Bold))
         title.setStyleSheet("color: #1F2937;")
-        header_layout.addWidget(title)
-        header_layout.addStretch()
-        layout.addLayout(header_layout)
+        layout.addWidget(title)
 
-        # Profile card
+        # ── Profile card ────────────────────────────────────────
         profile_card = QFrame()
         profile_card.setStyleSheet(
-            """
-            QFrame {
-                background-color: white;
-                border-radius: 12px;
-                padding: 30px;
-                border: 1px solid #E5E7EB;
-            }
-            """
+            "QFrame { background-color: white; border-radius: 12px;"
+            " border: 1px solid #E5E7EB; }"
         )
         profile_layout = QVBoxLayout(profile_card)
+        profile_layout.setContentsMargins(24, 24, 24, 24)
+        profile_layout.setSpacing(20)
 
-        # Top (avatar + name + role)
         self._build_header_section(profile_layout)
 
-        # Main form
-        form_layout = QVBoxLayout()
-        form_layout.setSpacing(20)
+        # Thin divider
+        divider = QFrame()
+        divider.setFrameShape(QFrame.HLine)
+        divider.setStyleSheet("color: #E5E7EB;")
+        profile_layout.addWidget(divider)
 
-        self._build_personal_section(form_layout)
-        self._build_account_section(form_layout)
-        self._build_responder_section_if_needed(form_layout)
-        self._build_member_since(form_layout)
-
-        profile_layout.addLayout(form_layout)
-
-        # Action buttons
+        self._build_personal_section(profile_layout)
+        self._build_account_section(profile_layout)
+        self._build_responder_section_if_needed(profile_layout)
+        self._build_member_since(profile_layout)
         self._build_actions(profile_layout)
 
-        # Add the profile card into the container layout
         layout.addWidget(profile_card)
+        layout.addStretch()
 
-        # Put the container (all content) inside the scroll area
         scroll_area.setWidget(container)
-
-        # Add scroll area to the main layout
         main_layout.addWidget(scroll_area)
-
-        # Apply main_layout to this widget
         self.setLayout(main_layout)
 
+    # ── reusable helpers ────────────────────────────────────────────────────
+
+    def _section_title(self, text: str) -> QLabel:
+        """Bold section heading — visible and prominent."""
+        lbl = QLabel(text)
+        lbl.setFont(QFont("Arial", 16, QFont.Bold))
+        lbl.setStyleSheet(
+            "color: #111827;"
+            " padding-top: 8px;"
+            " padding-bottom: 4px;"
+            " border-bottom: 2px solid #E5E7EB;"
+        )
+        return lbl
+
+    def _field_label(self, text: str) -> QLabel:
+        """Bold label shown ABOVE the input box."""
+        lbl = QLabel(text)
+        lbl.setFont(QFont("Arial", 11, QFont.Bold))
+        lbl.setStyleSheet("color: #374151;")
+        return lbl
+
+    def _input_style(self, readonly: bool = False) -> str:
+        bg = "#F9FAFB" if readonly else "white"
+        return (
+            f"QLineEdit {{ padding: 8px 10px; font-size: 13px; color: #111827;"
+            f" background: {bg}; border: 1px solid #D1D5DB;"
+            f" border-radius: 6px; }}"
+            f"QLineEdit:focus {{ border: 1px solid #3498db; }}"
+        )
+
+    def _make_field(self, label_text: str, value: str,
+                    readonly: bool = False) -> tuple:
+        """Return (container QVBoxLayout, QLineEdit) for one labelled field."""
+        col = QVBoxLayout()
+        col.setSpacing(4)
+        col.addWidget(self._field_label(label_text))
+        inp = QLineEdit(value or "")
+        inp.setMinimumHeight(36)
+        inp.setReadOnly(readonly)
+        inp.setStyleSheet(self._input_style(readonly))
+        col.addWidget(inp)
+        return col, inp
+
+    def _row(self, *cols) -> QHBoxLayout:
+        """Place several QVBoxLayout columns side by side with equal stretch."""
+        h = QHBoxLayout()
+        h.setSpacing(16)
+        for c in cols:
+            h.addLayout(c, 1)
+        return h
+
+    # ── section builders ────────────────────────────────────────────────────
+
     def _build_header_section(self, parent_layout: QVBoxLayout):
-        top_layout = QHBoxLayout()
+        top = QHBoxLayout()
+        top.setSpacing(20)
 
-        # Avatar section
-        avatar_section = QFrame()
-        avatar_section.setStyleSheet("background: transparent;")
-        avatar_layout = QVBoxLayout(avatar_section)
-
+        # Avatar
         self.avatar_label = QLabel("👤")
-        self.avatar_label.setStyleSheet(
-            """
-            font-size: 64px;
-            background-color: #F3F4F6;
-            border-radius: 50%;
-            padding: 30px;
-            min-width: 120px;
-            max-width: 120px;
-            min-height: 120px;
-            max-height: 120px;
-            """
-        )
+        self.avatar_label.setFixedSize(90, 90)
         self.avatar_label.setAlignment(Qt.AlignCenter)
-
-        change_avatar_btn = QPushButton("Change Photo")
-        change_avatar_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #6B7280;
-                color: white;
-                border: none;
-                padding: 6px 12px;
-                border-radius: 6px;
-                font-size: 12px;
-                margin-top: 10px;
-            }
-            QPushButton:hover {
-                background-color: #4B5563;
-            }
-            """
+        self.avatar_label.setStyleSheet(
+            "font-size: 48px; background-color: #F3F4F6;"
+            " border-radius: 45px;"
         )
-        change_avatar_btn.clicked.connect(self.change_avatar)
 
-        avatar_layout.addWidget(self.avatar_label)
-        avatar_layout.addWidget(change_avatar_btn)
-        avatar_layout.setAlignment(Qt.AlignCenter)
+        av_col = QVBoxLayout()
+        av_col.setSpacing(6)
+        av_col.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
+        av_col.addWidget(self.avatar_label)
 
-        # Basic info section
-        info_section = QFrame()
-        info_section.setStyleSheet("background: transparent;")
-        info_layout = QVBoxLayout(info_section)
+        change_btn = QPushButton("Change Photo")
+        change_btn.setFixedHeight(28)
+        change_btn.setStyleSheet(
+            "QPushButton { background: #6B7280; color: white; border: none;"
+            " border-radius: 5px; font-size: 11px; padding: 0 10px; }"
+            "QPushButton:hover { background: #4B5563; }"
+        )
+        change_btn.clicked.connect(self.change_avatar)
+        av_col.addWidget(change_btn)
 
-        name_label = QLabel(self.profile_data.get("full_name") or self.current_user.name)
-        name_label.setFont(QFont("Arial", 24, QFont.Bold))
-        name_label.setStyleSheet("color: #1F2937; margin-bottom: 5px;")
+        top.addLayout(av_col)
 
-        role_badge = QLabel(self.current_user.role.upper())
+        # Name + role badge
+        info_col = QVBoxLayout()
+        info_col.setSpacing(6)
+        info_col.setAlignment(Qt.AlignVCenter)
+
+        display_name = self.profile_data.get("full_name") or self.current_user.name
+        name_lbl = QLabel(display_name)
+        name_lbl.setFont(QFont("Arial", 18, QFont.Bold))
+        name_lbl.setStyleSheet("color: #111827;")
+        info_col.addWidget(name_lbl)
+
         role_color = {
             "admin": "#EF4444",
             "responder": "#3B82F6",
             "reporter": "#10B981",
         }.get(self.current_user.role, "#6B7280")
-        role_badge.setStyleSheet(
-            f"""
-            background-color: {role_color};
-            color: white;
-            padding: 6px 16px;
-            border-radius: 16px;
-            font-size: 12px;
-            font-weight: bold;
-            max-width: 120px;
-            """
+        badge = QLabel(self.current_user.role.upper())
+        badge.setFixedHeight(26)
+        badge.setStyleSheet(
+            f"background-color: {role_color}; color: white;"
+            " padding: 2px 14px; border-radius: 13px;"
+            " font-size: 11px; font-weight: bold;"
         )
+        info_col.addWidget(badge)
 
-        # Optional specialization line for responders/admins
-        specialization = (
+        spec = (
             self.profile_data.get("responder_category")
             or getattr(self.current_user, "responder_category", "")
         )
-        if self.current_user.role in ("responder", "admin") and specialization:
-            category_label = QLabel(f"Specialization: {specialization}")
-            category_label.setStyleSheet(
-                "color: #6B7280; font-size: 14px; margin-top: 5px;"
-            )
-            info_layout.addWidget(category_label)
+        if self.current_user.role in ("responder", "admin") and spec:
+            spec_lbl = QLabel(f"Specialization: {spec}")
+            spec_lbl.setStyleSheet("color: #6B7280; font-size: 12px;")
+            info_col.addWidget(spec_lbl)
 
-        info_layout.addWidget(name_label)
-        info_layout.addWidget(role_badge)
-        info_layout.addStretch()
-
-        top_layout.addWidget(avatar_section)
-        top_layout.addWidget(info_section)
-        top_layout.addStretch()
-
-        parent_layout.addLayout(top_layout)
+        top.addLayout(info_col)
+        top.addStretch()
+        parent_layout.addLayout(top)
 
     def _build_personal_section(self, form_layout: QVBoxLayout):
-        # Section title
-        personal_section = QLabel("Personal Information")
-        personal_section.setFont(QFont("Arial", 16, QFont.Bold))
-        personal_section.setStyleSheet("color: #1F2937; margin: 20px 0 10px 0;")
-        form_layout.addWidget(personal_section)
+        form_layout.addWidget(self._section_title("Personal Information"))
 
-        # Name + Email
-        name_email_layout = QHBoxLayout()
-
-        name_layout = QVBoxLayout()
-        name_label = QLabel("Full Name *")
-        name_label.setFont(QFont("Arial", 11, QFont.Bold))
-        self.name_input = QLineEdit(self.profile_data.get("full_name") or self.current_user.name)
-        self.name_input.setStyleSheet(
-            "padding: 10px; border: 1px solid #D1D5DB; border-radius: 6px;"
+        # Row 1 — Full Name | Email
+        c1, self.name_input = self._make_field(
+            "Full Name *",
+            self.profile_data.get("full_name") or self.current_user.name
         )
-        name_layout.addWidget(name_label)
-        name_layout.addWidget(self.name_input)
-
-        email_layout = QVBoxLayout()
-        email_label = QLabel("Email Address *")
-        email_label.setFont(QFont("Arial", 11, QFont.Bold))
-        self.email_input = QLineEdit(self.profile_data.get("email") or self.current_user.email)
-        self.email_input.setStyleSheet(
-            "padding: 10px; border: 1px solid #D1D5DB; border-radius: 6px;"
+        c2, self.email_input = self._make_field(
+            "Email Address *",
+            self.profile_data.get("email") or self.current_user.email
         )
-        email_layout.addWidget(email_label)
-        email_layout.addWidget(self.email_input)
+        form_layout.addLayout(self._row(c1, c2))
 
-        name_email_layout.addLayout(name_layout)
-        name_email_layout.addLayout(email_layout)
-        form_layout.addLayout(name_email_layout)
-
-        # Phone + Country
-        phone_country_layout = QHBoxLayout()
-
-        phone_layout = QVBoxLayout()
-        phone_label = QLabel("Phone Number *")
-        phone_label.setFont(QFont("Arial", 11, QFont.Bold))
-        self.phone_input = QLineEdit(self.profile_data.get("phone") or self.current_user.phone)
-        self.phone_input.setStyleSheet(
-            "padding: 10px; border: 1px solid #D1D5DB; border-radius: 6px;"
+        # Row 2 — Phone | Country
+        c3, self.phone_input = self._make_field(
+            "Phone Number *",
+            self.profile_data.get("phone") or (self.current_user.phone or "")
         )
-        phone_layout.addWidget(phone_label)
-        phone_layout.addWidget(self.phone_input)
-
-        country_layout = QVBoxLayout()
-        country_label = QLabel("Country")
-        country_label.setFont(QFont("Arial", 11, QFont.Bold))
-        self.country_input = QLineEdit(self.profile_data.get("country") or "")
-        self.country_input.setStyleSheet(
-            "padding: 10px; border: 1px solid #D1D5DB; border-radius: 6px;"
+        c4, self.country_input = self._make_field(
+            "Country",
+            self.profile_data.get("country") or ""
         )
-        country_layout.addWidget(country_label)
-        country_layout.addWidget(self.country_input)
+        form_layout.addLayout(self._row(c3, c4))
 
-        phone_country_layout.addLayout(phone_layout)
-        phone_country_layout.addLayout(country_layout)
-        form_layout.addLayout(phone_country_layout)
-
-        # City + Work Position
-        city_position_layout = QHBoxLayout()
-
-        city_layout = QVBoxLayout()
-        city_label = QLabel("City")
-        city_label.setFont(QFont("Arial", 11, QFont.Bold))
-        self.city_input = QLineEdit(self.profile_data.get("city") or "")
-        self.city_input.setStyleSheet(
-            "padding: 10px; border: 1px solid #D1D5DB; border-radius: 6px;"
+        # Row 3 — City | Work Position
+        c5, self.city_input = self._make_field(
+            "City",
+            self.profile_data.get("city") or ""
         )
-        city_layout.addWidget(city_label)
-        city_layout.addWidget(self.city_input)
-
-        position_layout = QVBoxLayout()
-        position_label = QLabel("Work Position / Title")
-        position_label.setFont(QFont("Arial", 11, QFont.Bold))
-        self.position_input = QLineEdit(self.profile_data.get("work_position") or "")
-        self.position_input.setStyleSheet(
-            "padding: 10px; border: 1px solid #D1D5DB; border-radius: 6px;"
+        c6, self.position_input = self._make_field(
+            "Work Position / Title",
+            self.profile_data.get("work_position") or ""
         )
-        position_layout.addWidget(position_label)
-        position_layout.addWidget(self.position_input)
+        form_layout.addLayout(self._row(c5, c6))
 
-        city_position_layout.addLayout(city_layout)
-        city_position_layout.addLayout(position_layout)
-        form_layout.addLayout(city_position_layout)
-
-        # Address (multi-line)
-        address_layout = QVBoxLayout()
-        address_label = QLabel("Address")
-        address_label.setFont(QFont("Arial", 11, QFont.Bold))
+        # Address — full width
+        addr_col = QVBoxLayout()
+        addr_col.setSpacing(4)
+        addr_col.addWidget(self._field_label("Address"))
         self.address_input = QTextEdit(self.profile_data.get("address") or "")
-        self.address_input.setMaximumHeight(60)
+        self.address_input.setFixedHeight(64)
         self.address_input.setStyleSheet(
-            "padding: 10px; border: 1px solid #D1D5DB; border-radius: 6px;"
+            "QTextEdit { padding: 8px 10px; font-size: 13px; color: #111827;"
+            " background: white; border: 1px solid #D1D5DB; border-radius: 6px; }"
+            "QTextEdit:focus { border: 1px solid #3498db; }"
         )
-        address_layout.addWidget(address_label)
-        address_layout.addWidget(self.address_input)
-        form_layout.addLayout(address_layout)
+        addr_col.addWidget(self.address_input)
+        form_layout.addLayout(addr_col)
 
         # Backup phone numbers
-        backup_phone_section = QVBoxLayout()
-        backup_phone_label = QLabel("Backup Phone Numbers")
-        backup_phone_label.setFont(QFont("Arial", 11, QFont.Bold))
-        backup_phone_section.addWidget(backup_phone_label)
-
+        form_layout.addWidget(self._field_label("Backup Phone Numbers"))
         self.backup_phone_layout = QVBoxLayout()
-        backup_phone_section.addLayout(self.backup_phone_layout)
-
-        backup_numbers = self.profile_data.get("backup_numbers") or []
-        if not backup_numbers:
-            self._add_backup_phone_field("")
-        else:
-            for number in backup_numbers:
-                self._add_backup_phone_field(number)
-
-        add_backup_phone_btn = QPushButton("+ Add backup number")
-        add_backup_phone_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #E5E7EB;
-                color: #374151;
-                border: none;
-                padding: 6px 12px;
-                border-radius: 6px;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #D1D5DB;
-            }
-            """
+        self.backup_phone_layout.setSpacing(6)
+        form_layout.addLayout(self.backup_phone_layout)
+        for num in (self.profile_data.get("backup_numbers") or [""]):
+            self._add_backup_phone_field(num)
+        add_bp = QPushButton("+ Add backup number")
+        add_bp.setFixedHeight(30)
+        add_bp.setStyleSheet(
+            "QPushButton { background: #E5E7EB; color: #374151; border: none;"
+            " padding: 0 12px; border-radius: 6px; font-size: 12px; }"
+            "QPushButton:hover { background: #D1D5DB; }"
         )
-        add_backup_phone_btn.clicked.connect(lambda: self._add_backup_phone_field(""))
-        backup_phone_section.addWidget(add_backup_phone_btn)
-
-        form_layout.addLayout(backup_phone_section)
+        add_bp.clicked.connect(lambda: self._add_backup_phone_field(""))
+        form_layout.addWidget(add_bp)
 
         # Backup addresses
-        backup_address_section = QVBoxLayout()
-        backup_address_label = QLabel("Backup Addresses")
-        backup_address_label.setFont(QFont("Arial", 11, QFont.Bold))
-        backup_address_section.addWidget(backup_address_label)
-
+        form_layout.addWidget(self._field_label("Backup Addresses"))
         self.backup_address_layout = QVBoxLayout()
-        backup_address_section.addLayout(self.backup_address_layout)
-
-        backup_addresses = self.profile_data.get("backup_addresses") or []
-        if not backup_addresses:
-            self._add_backup_address_field("")
-        else:
-            for addr in backup_addresses:
-                self._add_backup_address_field(addr)
-
-        add_backup_address_btn = QPushButton("+ Add backup address")
-        add_backup_address_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #E5E7EB;
-                color: #374151;
-                border: none;
-                padding: 6px 12px;
-                border-radius: 6px;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #D1D5DB;
-            }
-            """
+        self.backup_address_layout.setSpacing(6)
+        form_layout.addLayout(self.backup_address_layout)
+        for addr in (self.profile_data.get("backup_addresses") or [""]):
+            self._add_backup_address_field(addr)
+        add_ba = QPushButton("+ Add backup address")
+        add_ba.setFixedHeight(30)
+        add_ba.setStyleSheet(
+            "QPushButton { background: #E5E7EB; color: #374151; border: none;"
+            " padding: 0 12px; border-radius: 6px; font-size: 12px; }"
+            "QPushButton:hover { background: #D1D5DB; }"
         )
-        add_backup_address_btn.clicked.connect(lambda: self._add_backup_address_field(""))
-        backup_address_section.addWidget(add_backup_address_btn)
-
-        form_layout.addLayout(backup_address_section)
+        add_ba.clicked.connect(lambda: self._add_backup_address_field(""))
+        form_layout.addWidget(add_ba)
 
     def _build_account_section(self, form_layout: QVBoxLayout):
-        account_section = QLabel("Account Information")
-        account_section.setFont(QFont("Arial", 16, QFont.Bold))
-        account_section.setStyleSheet("color: #1F2937; margin: 20px 0 10px 0;")
-        form_layout.addWidget(account_section)
+        form_layout.addWidget(self._section_title("Account Information"))
 
-        username_role_layout = QHBoxLayout()
-
-        # Username
-        username_layout = QVBoxLayout()
-        username_label = QLabel("Username *")
-        username_label.setFont(QFont("Arial", 11, QFont.Bold))
-        self.username_input = QLineEdit(self.current_user.username)
-        self.username_input.setStyleSheet(
-            "padding: 10px; border: 1px solid #D1D5DB; border-radius: 6px;"
+        c1, self.username_input = self._make_field(
+            "Username *", self.current_user.username
         )
-        username_layout.addWidget(username_label)
-        username_layout.addWidget(self.username_input)
-
-        # Role (read-only)
-        role_layout = QVBoxLayout()
-        role_label = QLabel("Role")
-        role_label.setFont(QFont("Arial", 11, QFont.Bold))
-        role_display = QLineEdit(self.current_user.role.title())
-        role_display.setReadOnly(True)
-        role_display.setStyleSheet(
-            "padding: 10px; border: 1px solid #D1D5DB; border-radius: 6px; background-color: #F3F4F6;"
+        c2, _ = self._make_field(
+            "Role", self.current_user.role.title(), readonly=True
         )
-        role_layout.addWidget(role_label)
-        role_layout.addWidget(role_display)
-
-        username_role_layout.addLayout(username_layout)
-        username_role_layout.addLayout(role_layout)
-        form_layout.addLayout(username_role_layout)
+        form_layout.addLayout(self._row(c1, c2))
 
     def _build_responder_section_if_needed(self, form_layout: QVBoxLayout):
         if self.current_user.role not in ("responder", "admin"):
             return
 
-        responder_section = QLabel("Responder / Role Information")
-        responder_section.setFont(QFont("Arial", 16, QFont.Bold))
-        responder_section.setStyleSheet("color: #1F2937; margin: 20px 0 10px 0;")
-        form_layout.addWidget(responder_section)
+        form_layout.addWidget(self._section_title("Responder / Role Information"))
 
-        # Category + Role row
-        cat_role_layout = QHBoxLayout()
-
-        # Category
-        category_layout = QVBoxLayout()
-        category_label = QLabel("Responder Category")
-        category_label.setFont(QFont("Arial", 11, QFont.Bold))
-        self.category_combo = QComboBox()
-        self.category_combo.addItems(get_category_list())
-
-        # Try to select existing category if present
+        # Read values set at account creation — display only, not editable
         existing_cat = (
             self.profile_data.get("responder_category")
             or getattr(self.current_user, "responder_category", "")
+            or ""
+        )
+        existing_role = self.profile_data.get("responder_role") or ""
+
+        # Human-readable category label
+        category_display = existing_cat.replace("_", " ").title() if existing_cat else "Not set"
+
+        # Get roles list for this category so we can show the saved role
+        roles_for_cat = get_roles_for_category(
+            existing_cat.replace("_", " ").title()
+        ) if existing_cat else []
+        role_display = existing_role if existing_role else (
+            roles_for_cat[0] if roles_for_cat else "Not set"
         )
 
-        if existing_cat:
-            pretty = existing_cat.replace("_", " ").title()
-            for idx in range(self.category_combo.count()):
-                if self.category_combo.itemText(idx).lower() == pretty.lower():
-                    self.category_combo.setCurrentIndex(idx)
-                    break
+        # Show as read-only fields — same grey style as Role and Member Since
+        c1, _ = self._make_field("Responder Category", category_display, readonly=True)
+        c2, _ = self._make_field("Role in Category", role_display, readonly=True)
+        form_layout.addLayout(self._row(c1, c2))
 
-        self.category_combo.currentIndexChanged.connect(self._on_category_changed)
-        category_layout.addWidget(category_label)
-        category_layout.addWidget(self.category_combo)
+        # Explanatory note
+        note = QLabel(
+            "ℹ  Category and role were set when the account was created "
+            "and cannot be changed here."
+        )
+        note.setWordWrap(True)
+        note.setStyleSheet("color: #9CA3AF; font-size: 11px; padding-top: 2px;")
+        form_layout.addWidget(note)
 
-        # Role within category
-        role_layout = QVBoxLayout()
-        role_label = QLabel("Role in Category")
-        role_label.setFont(QFont("Arial", 11, QFont.Bold))
-        self.role_combo = QComboBox()
-        role_layout.addWidget(role_label)
-        role_layout.addWidget(self.role_combo)
-
-        cat_role_layout.addLayout(category_layout)
-        cat_role_layout.addLayout(role_layout)
-        form_layout.addLayout(cat_role_layout)
-
-        # Initialize roles for the initial category
-        self._on_category_changed()
-
-        # Select existing role if present
-        existing_role = self.profile_data.get("responder_role") or ""
-        if existing_cat:
-            pretty = existing_cat.replace("_", " ").title()
-            for idx in range(self.category_combo.count()):
-                if self.category_combo.itemText(idx).lower() == pretty.lower():
-                    self.category_combo.setCurrentIndex(idx)
-                    break
-
+        # Set to None so save_profile and _on_category_changed ignore them safely
+        self.category_combo = None
+        self.role_combo = None
 
     def _build_member_since(self, form_layout: QVBoxLayout):
-        member_since_layout = QVBoxLayout()
-        member_since_label = QLabel("Member Since")
-        member_since_label.setFont(QFont("Arial", 11, QFont.Bold))
-        member_since = (
-            self.current_user.created_at.strftime("%B %d, %Y")
-            if getattr(self.current_user, "created_at", None)
-            else "N/A"
+        c, _ = self._make_field(
+            "Member Since",
+            (
+                self.current_user.created_at.strftime("%B %d, %Y")
+                if getattr(self.current_user, "created_at", None)
+                else "N/A"
+            ),
+            readonly=True,
         )
-        member_since_display = QLineEdit(member_since)
-        member_since_display.setReadOnly(True)
-        member_since_display.setStyleSheet(
-            "padding: 10px; border: 1px solid #D1D5DB; border-radius: 6px; background-color: #F3F4F6;"
-        )
-        member_since_layout.addWidget(member_since_label)
-        member_since_layout.addWidget(member_since_display)
-        form_layout.addLayout(member_since_layout)
+        h = QHBoxLayout()
+        h.addLayout(c)
+        h.addStretch()
+        form_layout.addLayout(h)
 
     def _build_actions(self, profile_layout: QVBoxLayout):
-        actions_layout = QHBoxLayout()
+        # Thin divider above buttons
+        div = QFrame()
+        div.setFrameShape(QFrame.HLine)
+        div.setStyleSheet("color: #E5E7EB;")
+        profile_layout.addWidget(div)
+
+        actions = QHBoxLayout()
+        actions.setSpacing(10)
 
         cancel_btn = QPushButton("Cancel")
+        cancel_btn.setFixedHeight(38)
         cancel_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #6B7280;
-                color: white;
-                border: none;
-                padding: 12px 24px;
-                border-radius: 8px;
-            }
-            QPushButton:hover {
-                background-color: #4B5563;
-            }
-            """
+            "QPushButton { background: #6B7280; color: white; border: none;"
+            " padding: 0 20px; border-radius: 7px; font-size: 13px; }"
+            "QPushButton:hover { background: #4B5563; }"
         )
         cancel_btn.clicked.connect(self._reset_form_from_profile_data)
 
-        save_btn = QPushButton("💾 Save Changes")
+        save_btn = QPushButton("💾  Save Changes")
+        save_btn.setFixedHeight(38)
         save_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #10B981;
-                color: white;
-                border: none;
-                padding: 12px 24px;
-                border-radius: 8px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #059669;
-            }
-            """
+            "QPushButton { background: #10B981; color: white; border: none;"
+            " padding: 0 20px; border-radius: 7px; font-size: 13px; font-weight: bold; }"
+            "QPushButton:hover { background: #059669; }"
         )
         save_btn.clicked.connect(self.save_profile)
 
-        change_password_btn = QPushButton("🔒 Change Password")
-        change_password_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #3B82F6;
-                color: white;
-                border: none;
-                padding: 12px 24px;
-                border-radius: 8px;
-            }
-            QPushButton:hover {
-                background-color: #2563EB;
-            }
-            """
+        pwd_btn = QPushButton("🔒  Change Password")
+        pwd_btn.setFixedHeight(38)
+        pwd_btn.setStyleSheet(
+            "QPushButton { background: #3B82F6; color: white; border: none;"
+            " padding: 0 20px; border-radius: 7px; font-size: 13px; }"
+            "QPushButton:hover { background: #2563EB; }"
         )
-        change_password_btn.clicked.connect(self.change_password)
+        pwd_btn.clicked.connect(self.change_password)
 
-        actions_layout.addWidget(cancel_btn)
-        actions_layout.addStretch()
-        actions_layout.addWidget(change_password_btn)
-        actions_layout.addWidget(save_btn)
-
-        profile_layout.addLayout(actions_layout)
+        actions.addWidget(cancel_btn)
+        actions.addStretch()
+        actions.addWidget(pwd_btn)
+        actions.addWidget(save_btn)
+        profile_layout.addLayout(actions)
 
     # --------------------
     # Helper widget logic
@@ -893,10 +753,10 @@ class Profile(QWidget):
                 break
 
     def _on_category_changed(self):
+        # Only relevant if editable combos exist (not the read-only profile view)
         if not self.category_combo or not self.role_combo:
             return
-        category = self.category_combo.currentText()
-        roles = get_roles_for_category(category)
+        roles = get_roles_for_category(self.category_combo.currentText())
         self.role_combo.clear()
         self.role_combo.addItems(roles)
 
