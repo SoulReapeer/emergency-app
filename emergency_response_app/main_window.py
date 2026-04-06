@@ -17,6 +17,8 @@ from reporter.reporter_history_page import ReporterHistoryPage
 from responder.responder_assignments_page import ResponderAssignmentsPage
 from responder.responder_available_page import ResponderAvailablePage
 from admin.admin_analytics import AdminAnalytics
+from admin.user_dossier import UserDossier
+from admin.case_file import CaseFile
 import styles
 from styles import theme
 
@@ -39,6 +41,8 @@ class MainWindow(QMainWindow):
         self.responder_assignments_view = None
         self.responder_available_view = None
         self.admin_analytics_view = None
+        self.user_dossier_view = None
+        self.case_file_view = None
         self.init_ui()
 
     # ---------------------------------------------------------------
@@ -285,13 +289,16 @@ class MainWindow(QMainWindow):
             self.admin_incidents_view = AdminIncidents(incidents, users, self.db)
             self.content_area.addWidget(self.admin_incidents_view)
 
-            # 🔧 FIX: AdminUsers ekhon ekta argument (db) niye call hocche
+            # FIX: AdminUsers ekhon ekta argument (db) niye call hocche
             self.admin_users_view = AdminUsers(self.db)
             self.content_area.addWidget(self.admin_users_view)
 
-            # 👇 Analytics placeholder page
+            # Analytics
             self.admin_analytics_view = AdminAnalytics(self.db)
             self.content_area.addWidget(self.admin_analytics_view)
+
+            # User Dossier & Case File — added on demand, placeholders for now
+            # (actual widgets created in open_user_dossier / open_case_file)
 
         # dashboard + profile same thakbe
         self.content_area.addWidget(self.dashboard)
@@ -394,6 +401,44 @@ class MainWindow(QMainWindow):
         elif view == "available" and self.user.role == "responder":
             if self.responder_available_view is not None:
                 self.content_area.setCurrentWidget(self.responder_available_view)
+
+    def open_user_dossier(self, user):
+        """Create (or replace) the UserDossier page and show it."""
+        if self.user_dossier_view is not None:
+            self.content_area.removeWidget(self.user_dossier_view)
+            self.user_dossier_view.deleteLater()
+
+        self.user_dossier_view = UserDossier(user, self.db)
+        self.user_dossier_view.open_case.connect(self.open_case_file)
+        self.content_area.addWidget(self.user_dossier_view)
+        self.content_area.setCurrentWidget(self.user_dossier_view)
+
+    def open_case_file(self, incident_id):
+        """Create (or replace) the CaseFile page and show it."""
+        incident = self.db.get_incident_by_id(incident_id)
+        if not incident:
+            return
+
+        if self.case_file_view is not None:
+            self.content_area.removeWidget(self.case_file_view)
+            self.case_file_view.deleteLater()
+
+        self.case_file_view = CaseFile(incident, self.db)
+        self.case_file_view.closed.connect(self._on_case_file_closed)
+        self.content_area.addWidget(self.case_file_view)
+        self.content_area.setCurrentWidget(self.case_file_view)
+
+    def _on_case_file_closed(self):
+        """Return to the user dossier if it exists, otherwise to the users list."""
+        if self.user_dossier_view is not None:
+            self.content_area.setCurrentWidget(self.user_dossier_view)
+        elif self.admin_users_view is not None:
+            self.content_area.setCurrentWidget(self.admin_users_view)
+
+    def handle_navigation_by_view(self, view_name):
+        """Used by sub-pages (e.g. UserDossier back button) to navigate."""
+        if view_name == "users" and self.admin_users_view is not None:
+            self.content_area.setCurrentWidget(self.admin_users_view)
 
     def handle_logout(self):
         reply = QMessageBox.question(
