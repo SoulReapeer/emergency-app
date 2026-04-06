@@ -18,6 +18,7 @@ from responder.responder_assignments_page import ResponderAssignmentsPage
 from responder.responder_available_page import ResponderAvailablePage
 from admin.admin_analytics import AdminAnalytics
 import styles
+from styles import theme
 
 
 class MainWindow(QMainWindow):
@@ -46,14 +47,13 @@ class MainWindow(QMainWindow):
         self.setGeometry(100, 100, 1400, 900)
         self.showMaximized()
 
-        central_widget = QWidget()
-        central_widget.setStyleSheet("background-color: #f8f9fa;")
-        self.setCentralWidget(central_widget)
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
 
         main_layout = QHBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
-        central_widget.setLayout(main_layout)
+        self.central_widget.setLayout(main_layout)
 
         # Sidebar on the left
         self.sidebar = self.create_sidebar()
@@ -61,46 +61,91 @@ class MainWindow(QMainWindow):
 
         # Main stacked content area on the right
         self.content_area = QStackedWidget()
-        self.content_area.setStyleSheet(
-            """
-            QStackedWidget {
-                background-color: #f8f9fa;
-                border: none;
-            }
-            """
-        )
         main_layout.addWidget(self.content_area, 1)
 
         # Setup role-specific dashboard and pages
         self.setup_dashboard()
 
+        # Register for theme changes and apply initial theme
+        theme.register(self.apply_theme)
+        self.apply_theme()
+
+    def apply_theme(self):
+        """Repaint the main window shell when theme changes."""
+        s = theme.STYLES
+        bg = s['bg_main']
+        self.central_widget.setStyleSheet(f"background-color: {bg};")
+        self.content_area.setStyleSheet(
+            f"QStackedWidget {{ background-color: {bg}; border: none; }}"
+        )
+
+        sidebar_bg   = s['sidebar_bg']
+        sidebar_hdr  = s['sidebar_header']
+        sidebar_hvr  = s['sidebar_hover']
+        sidebar_bdr  = s['sidebar_border']
+        text_color   = '#ffffff' if s['is_dark'] else '#ffffff'
+
+        self.sidebar.setStyleSheet(
+            f"QFrame {{ background-color: {sidebar_bg}; color: {text_color}; border: none; }}"
+        )
+        self._sidebar_user_section.setStyleSheet(
+            f"QFrame {{ background-color: {sidebar_hdr}; border-bottom: 2px solid {sidebar_bdr}; }}"
+        )
+
+        # Update theme toggle button label
+        self._theme_btn.setText("☀️  Light Mode" if s['is_dark'] else "🌙  Dark Mode")
+        self._theme_btn.setStyleSheet(self._theme_btn_style(s['is_dark']))
+
+        # Refresh nav button styles
+        for btn in self.sidebar.findChildren(QPushButton):
+            if btn.property("nav_btn") and not btn.property("is_logout") and not btn.property("is_theme"):
+                btn.setStyleSheet(self._nav_btn_style(sidebar_hvr))
+
+    def _nav_btn_style(self, hover_color):
+        return f"""
+            QPushButton {{
+                background-color: transparent;
+                color: white;
+                border: none;
+                padding: 16px 22px;
+                text-align: left;
+                border-radius: 0px;
+                font-size: 15px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background-color: {hover_color};
+                border-left: 4px solid #3498db;
+            }}
+        """
+
+    def _theme_btn_style(self, is_dark):
+        return """
+            QPushButton {
+                background-color: transparent;
+                color: white;
+                border: none;
+                padding: 15px 20px;
+                text-align: left;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #3498db;
+                border-left: 4px solid #2980b9;
+            }
+        """
+
     # ---------------------------------------------------------------
     def create_sidebar(self) -> QFrame:
         sidebar = QFrame()
-        sidebar.setStyleSheet(
-            """
-            QFrame {
-                background-color: #2c3e50;
-                color: white;
-                border: none;
-            }
-            """
-        )
 
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
         # ---------- User header area ----------
-        user_section = QFrame()
-        user_section.setStyleSheet(
-            """
-            QFrame {
-                background-color: #34495e;
-                border-bottom: 2px solid #3498db;
-            }
-            """
-        )
+        self._sidebar_user_section = QFrame()
         user_layout = QVBoxLayout()
         user_layout.setContentsMargins(20, 30, 20, 30)
 
@@ -121,60 +166,35 @@ class MainWindow(QMainWindow):
         user_layout.addWidget(avatar_label)
         user_layout.addWidget(user_name)
         user_layout.addWidget(user_role)
-        user_section.setLayout(user_layout)
-        layout.addWidget(user_section)
+        self._sidebar_user_section.setLayout(user_layout)
+        layout.addWidget(self._sidebar_user_section)
 
         # ---------- Navigation buttons ----------
         nav_buttons = self.create_nav_buttons()
         for btn in nav_buttons:
-            btn.setStyleSheet(
-                """
-                QPushButton {
-                    background-color: transparent;
-                    color: white;
-                    border: none;
-                    padding: 16px 22px;
-                    text-align: left;
-                    border-radius: 0px;
-                    font-size: 15px;
-                    font-weight: bold;
-                }
-                QPushButton:hover {
-                    background-color: #34495e;
-                    border-left: 4px solid #3498db;
-                }
-                """
-            )
+            btn.setProperty("nav_btn", True)
             layout.addWidget(btn)
 
         layout.addStretch()
 
+        # ---------- Dark / Light toggle ----------
+        self._theme_btn = QPushButton("🌙  Dark Mode")
+        self._theme_btn.setProperty("is_theme", True)
+        self._theme_btn.setCursor(Qt.PointingHandCursor)
+        self._theme_btn.clicked.connect(self._on_theme_toggle)
+        layout.addWidget(self._theme_btn)
+
         # ---------- Profile button ----------
         profile_btn = QPushButton("🙍 My Profile")
         profile_btn.setProperty("view", "profile")
+        profile_btn.setProperty("nav_btn", True)
         profile_btn.setCursor(Qt.PointingHandCursor)
         profile_btn.clicked.connect(self.handle_navigation)
-        profile_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: transparent;
-                color: white;
-                border: none;
-                padding: 15px 20px;
-                text-align: left;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #34495e;
-                border-left: 4px solid #3498db;
-            }
-            """
-        )
         layout.addWidget(profile_btn)
 
         # ---------- Logout button ----------
         logout_btn = QPushButton("🚪 Logout")
+        logout_btn.setProperty("is_logout", True)
         logout_btn.setStyleSheet(
             """
             QPushButton {
@@ -186,9 +206,7 @@ class MainWindow(QMainWindow):
                 font-weight: bold;
                 font-size: 14px;
             }
-            QPushButton:hover {
-                background-color: #c0392b;
-            }
+            QPushButton:hover { background-color: #c0392b; }
             """
         )
         logout_btn.clicked.connect(self.handle_logout)
@@ -196,6 +214,9 @@ class MainWindow(QMainWindow):
 
         sidebar.setLayout(layout)
         return sidebar
+
+    def _on_theme_toggle(self):
+        theme.toggle()
 
     # ---------------------------------------------------------------
     def create_nav_buttons(self):
@@ -313,29 +334,13 @@ class MainWindow(QMainWindow):
         sender = self.sender()
         view = sender.property("view")
 
-        # Reset styles only for nav/profile buttons (those that have 'view')
+        # Reset all nav buttons to default style
+        hover = theme.STYLES['sidebar_hover']
         for btn in self.sidebar.findChildren(QPushButton):
-            if btn.property("view") is not None:
-                btn.setStyleSheet(
-                    """
-                    QPushButton {
-                        background-color: transparent;
-                        color: white;
-                        border: none;
-                        padding: 15px 20px;
-                        text-align: left;
-                        border-radius: 0px;
-                        font-size: 14px;
-                        font-weight: bold;
-                    }
-                    QPushButton:hover {
-                        background-color: #34495e;
-                        border-left: 4px solid #3498db;
-                    }
-                    """
-                )
+            if btn.property("nav_btn"):
+                btn.setStyleSheet(self._nav_btn_style(hover))
 
-        # Highlight active button (again, only nav/profile)
+        # Highlight the active button
         sender.setStyleSheet(
             """
             QPushButton {
